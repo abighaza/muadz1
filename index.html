@@ -3,12 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Game Punya Mu'adz</title>
+    <title>Game Mu'adz</title>
     <style>
       :root {
         --primary-color: #4caf50;
         --accent-color: #ff9800;
-        --bg-color: #1a237e;
         --font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
       }
 
@@ -19,8 +18,11 @@
         font-family: var(--font-family);
       }
 
+      /* Background Animasi Sekolah Dasar Ramah Anak (Bergerak Lembut) */
       body {
-        background: radial-gradient(circle, #283593 0%, #0d47a1 100%);
+        background: linear-gradient(-45deg, #4fc3f7, #81c784, #ffd54f, #ff8a65);
+        background-size: 400% 400%;
+        animation: schoolBgAnimation 16s ease infinite;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -28,6 +30,86 @@
         min-height: 100vh;
         color: white;
         overflow-x: hidden;
+        position: relative;
+      }
+
+      @keyframes schoolBgAnimation {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      /* Hiasan Awan Kartun Bergerak di Background */
+      .cloud {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 50px;
+        z-index: 0;
+        pointer-events: none;
+        animation: moveClouds 25s linear infinite;
+      }
+
+      .cloud::before,
+      .cloud::after {
+        content: "";
+        position: absolute;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+      }
+
+      .cloud1 {
+        width: 120px;
+        height: 40px;
+        top: 8%;
+        left: -150px;
+      }
+      .cloud1::before {
+        width: 50px;
+        height: 50px;
+        top: -20px;
+        left: 15px;
+      }
+      .cloud1::after {
+        width: 40px;
+        height: 40px;
+        top: -15px;
+        right: 15px;
+      }
+
+      .cloud2 {
+        width: 180px;
+        height: 50px;
+        top: 20%;
+        left: -200px;
+        animation-duration: 35s;
+        animation-delay: 5s;
+      }
+      .cloud2::before {
+        width: 70px;
+        height: 70px;
+        top: -30px;
+        left: 25px;
+      }
+      .cloud2::after {
+        width: 50px;
+        height: 50px;
+        top: -20px;
+        right: 25px;
+      }
+
+      @keyframes moveClouds {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(115vw);
+        }
       }
 
       /* Header Container dengan Avatar Bulat di Kiri Atas */
@@ -39,6 +121,7 @@
         width: 100%;
         max-width: 1200px;
         margin-bottom: 15px;
+        z-index: 2;
       }
 
       .user-avatar {
@@ -56,7 +139,7 @@
       }
 
       h1 {
-        color: #ffd54f;
+        color: #ffffff;
         text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.5);
         text-align: center;
         font-size: 1.8rem;
@@ -70,6 +153,7 @@
         align-items: flex-start;
         max-width: 1200px;
         width: 100%;
+        z-index: 2;
       }
 
       /* 3D Board Perspective Container */
@@ -421,16 +505,20 @@
     </style>
   </head>
   <body>
+    <!-- Animasi Awan Sekolah Dasar Ramah Anak -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+
     <!-- Header dengan Avatar Bulat di Kiri Atas -->
     <div class="header-container">
       <img
-        src="./image/aa.jpg"
+        src="/image/aa.jpg"
         alt="Foto Profil Pemain"
         class="user-avatar"
         id="user-avatar"
         title="Profil Pemain"
       />
-      <h1>🎲 Game Mu'adz</h1>
+      <h1>🎲 Game Ular Tangga Mu'adz</h1>
     </div>
 
     <div class="game-wrapper">
@@ -489,7 +577,7 @@
     </div>
 
     <script>
-      // === AUDIO SFX (Web Audio API) ===
+      // === AUDIO SFX & SPEECH SYNTHESIS ===
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       let audioCtx;
 
@@ -498,25 +586,116 @@
         if (audioCtx.state === "suspended") audioCtx.resume();
       }
 
+      // Suara "Anda belum beruntung" via Web Speech API
+      function playUnluckyVoice() {
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(
+            "Anda belum beruntung",
+          );
+          utterance.lang = "id-ID";
+          utterance.rate = 0.95;
+          utterance.pitch = 0.9;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
+
+      // Bunyi Tik/Klik Roda Spinner Saat Berputar
+      function playSpinWheelSound() {
+        initAudio();
+        const duration = 3000;
+        const startTime = audioCtx.currentTime;
+        let interval = 0.05;
+
+        function triggerTick() {
+          if (audioCtx.currentTime - startTime >= duration / 1000) return;
+
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(
+            800 + Math.random() * 200,
+            audioCtx.currentTime,
+          );
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.03,
+          );
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.03);
+
+          const elapsedRatio =
+            (audioCtx.currentTime - startTime) / (duration / 1000);
+          interval = 0.05 + elapsedRatio * elapsedRatio * 0.25;
+
+          setTimeout(triggerTick, interval * 1000);
+        }
+
+        triggerTick();
+      }
+
       function playSound(type) {
         initAudio();
+
+        if (type === "clapping") {
+          const now = audioCtx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            g.gain.setValueAtTime(0.12, now + idx * 0.08);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.3);
+          });
+
+          for (let i = 0; i < 18; i++) {
+            const clapTime = now + Math.random() * 0.6;
+            const bufferSize = audioCtx.sampleRate * 0.05;
+            const buffer = audioCtx.createBuffer(
+              1,
+              bufferSize,
+              audioCtx.sampleRate,
+            );
+            const data = buffer.getChannelData(0);
+            for (let j = 0; j < bufferSize; j++) {
+              data[j] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1000 + Math.random() * 1200;
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.15, clapTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, clapTime + 0.04);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            noise.start(clapTime);
+          }
+          return;
+        }
+
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        if (type === "correct") {
-          osc.type = "triangle";
-          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            audioCtx.currentTime + 0.3,
-          );
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.3);
-        } else if (type === "wrong") {
+        if (type === "wrong") {
           osc.type = "sawtooth";
           osc.frequency.setValueAtTime(180, audioCtx.currentTime);
           osc.frequency.linearRampToValueAtTime(
@@ -530,6 +709,8 @@
           );
           osc.start();
           osc.stop(audioCtx.currentTime + 0.3);
+
+          playUnluckyVoice();
         } else if (type === "reset") {
           osc.type = "sawtooth";
           osc.frequency.setValueAtTime(800, audioCtx.currentTime);
@@ -544,6 +725,8 @@
           );
           osc.start();
           osc.stop(audioCtx.currentTime + 0.6);
+
+          playUnluckyVoice();
         } else if (type === "step") {
           osc.type = "sine";
           osc.frequency.setValueAtTime(400, audioCtx.currentTime);
@@ -613,7 +796,7 @@
       snakes.forEach((s) => (snakesAndLaddersMap[s.from] = s.to));
 
       let playerPosition = 1;
-      let wrongAttempts = 0; // Hitungan salah jawab berturut-turut
+      let wrongAttempts = 0;
       let currentCorrectAnswer = null;
       let currentRotation = 0;
       let pendingSpinResult = 0;
@@ -999,7 +1182,7 @@
           subject: "IPA",
           q: "Dini mendengarkan suara musik yang merdu. Organ tubuh manusia untuk mendengar suara adalah...",
           a: "Telinga",
-          opts: ["Mata", "Telinga", "Hidung", "Lidah"],
+          opts: ["Mata", "Telinga", "Hidung", "Mulut"],
         },
         {
           id: 53,
@@ -1074,7 +1257,7 @@
         {
           id: 63,
           subject: "IPA",
-          q: "Makanan yang kita makan diproses dan dicerna di dalam perut oleh organ...",
+          q: "Makanan yang kita makan dipproses dan dicerna di dalam perut oleh organ...",
           a: "Lambung",
           opts: ["Jantung", "Paru-paru", "Lambung", "Otak"],
         },
@@ -1519,11 +1702,11 @@
         });
       }
 
-      // PENANGANAN SALAH JAWAB (Reset ke Kotak 1 jika salah > 2 kali)
+      // PENANGANAN JAWABAN
       function checkAnswer(selectedOpt) {
         if (selectedOpt === currentCorrectAnswer) {
-          playSound("correct");
-          wrongAttempts = 0; // Reset hitungan kesalahan jika berhasil menjawab benar
+          playSound("clapping");
+          wrongAttempts = 0;
           document.getElementById("wrong-count-display").innerText =
             wrongAttempts;
           document.getElementById("instruction-banner").innerText =
@@ -1538,7 +1721,7 @@
           if (wrongAttempts > 2) {
             playSound("reset");
             alert(
-              "⚠️ Kamu telah salah menjawab lebih dari 2 kali! Karakter kamu kembali ke kotak 1.",
+              "⚠️ Anda belum beruntung! Kamu telah salah menjawab lebih dari 2 kali. Karakter kamu kembali ke kotak 1.",
             );
             wrongAttempts = 0;
             playerPosition = 1;
@@ -1550,7 +1733,7 @@
           } else {
             playSound("wrong");
             alert(
-              `Jawaban kurang tepat! (Kesalahan ${wrongAttempts}/2). Coba jawab soal baru berikut ini 💪`,
+              `Anda belum beruntung! Jawaban kurang tepat (Kesalahan ${wrongAttempts}/2). Coba jawab soal baru berikut ini 💪`,
             );
             renderQuiz();
           }
@@ -1602,9 +1785,11 @@
         document.getElementById("pos-display").innerText = playerPosition;
       }
 
-      // Putar Roda Spin
+      // Putar Roda Spin + Suara Spinner Berputar
       document.getElementById("btn-spin").onclick = () => {
         initAudio();
+        playSpinWheelSound();
+
         const btnSpin = document.getElementById("btn-spin");
         btnSpin.disabled = true;
 
