@@ -1,909 +1,1722 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Games Buatan Mu'adz</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Punya Mu'adz</title>
     <style>
-        :root {
-            --primary-color: #4caf50;
-            --accent-color: #ff9800;
-            --bg-color: #1a237e;
-            --font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-        }
+      :root {
+        --primary-color: #4caf50;
+        --accent-color: #ff9800;
+        --bg-color: #1a237e;
+        --font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
+      }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-family);
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-family);
+      }
 
-        body {
-            background: radial-gradient(circle, #283593 0%, #0d47a1 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            min-height: 100vh;
-            color: white;
-            overflow-x: hidden;
-        }
+      body {
+        background: radial-gradient(circle, #283593 0%, #0d47a1 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+        min-height: 100vh;
+        color: white;
+        overflow-x: hidden;
+      }
 
-        h1 {
-            color: #ffd54f;
-            text-shadow: 2px 4px 10px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
-            text-align: center;
-        }
+      /* Header Container dengan Avatar Bulat di Kiri Atas */
+      .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+        max-width: 1200px;
+        margin-bottom: 15px;
+      }
 
-        .game-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            justify-content: center;
-            align-items: flex-start;
-            max-width: 1200px;
-            width: 100%;
-        }
+      .user-avatar {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid #ffd54f;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        object-fit: cover;
+        background: #ffffff;
+      }
 
-        /* 3D Board Perspective Container */
-        .board-viewport {
-            perspective: 1000px;
-            padding: 20px;
-        }
+      h1 {
+        color: #ffd54f;
+        text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        font-size: 1.8rem;
+      }
 
+      .game-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        justify-content: center;
+        align-items: flex-start;
+        max-width: 1200px;
+        width: 100%;
+      }
+
+      /* 3D Board Perspective Container */
+      .board-viewport {
+        perspective: 1000px;
+        padding: 20px;
+      }
+
+      .board-container {
+        position: relative;
+        width: 520px;
+        height: 520px;
+        background: #ffffff;
+        border: 10px solid #2e7d32;
+        border-radius: 20px;
+        box-shadow:
+          0 30px 50px rgba(0, 0, 0, 0.6),
+          inset 0 0 15px rgba(0, 0, 0, 0.2);
+        transform: rotateX(28deg) rotateZ(-2deg);
+        transform-style: preserve-3d;
+        transition: transform 0.5s ease;
+      }
+
+      .board-container:hover {
+        transform: rotateX(18deg) rotateZ(0deg);
+      }
+
+      /* Canvas Overlay untuk Gambar Ular & Tangga 3D */
+      #board-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .board-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        width: 100%;
+        height: 100%;
+        position: relative;
+        z-index: 2;
+      }
+
+      .cell {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 2px 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #333;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .cell-100 {
+        background-color: #ffe082 !important;
+      }
+
+      /* Target Cell Highlight Animation */
+      .cell.target-highlight {
+        animation: glow 1s infinite alternate;
+        cursor: pointer !important;
+        z-index: 10;
+      }
+
+      @keyframes glow {
+        from {
+          background-color: #fff59d;
+          box-shadow: inset 0 0 10px #fbc02d;
+        }
+        to {
+          background-color: #ffee58;
+          box-shadow: inset 0 0 20px #f57f17;
+        }
+      }
+
+      /* 3D Player Token */
+      .player-token {
+        width: 32px;
+        height: 32px;
+        background: radial-gradient(circle at 30% 30%, #ff4081, #c2185b);
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        position: absolute;
+        z-index: 100;
+        box-shadow:
+          0 10px 15px rgba(0, 0, 0, 0.5),
+          inset -2px -2px 6px rgba(0, 0, 0, 0.4);
+        transition:
+          left 0.4s ease,
+          top 0.4s ease,
+          transform 0.4s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.1rem;
+        transform: translateZ(20px);
+      }
+
+      /* Control Panel / Quiz Panel */
+      .panel {
+        flex: 1;
+        min-width: 300px;
+        max-width: 450px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        color: #333;
+      }
+
+      .status-box {
+        background: #e8f5e9;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: bold;
+        color: #1b5e20;
+        display: flex;
+        justify-content: space-between;
+        border: 2px solid #a5d6a7;
+      }
+
+      .wrong-counter-badge {
+        background: #ffebee;
+        color: #c62828;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        border: 1px solid #ef9a9a;
+      }
+
+      .instruction-banner {
+        background: #e1f5fe;
+        border: 2px solid #81d4fa;
+        color: #0277bd;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: bold;
+        text-align: center;
+        font-size: 0.95rem;
+      }
+
+      .quiz-box {
+        background: #fff8e1;
+        border: 2px solid #ffe082;
+        padding: 15px;
+        border-radius: 15px;
+      }
+
+      .subject-badge {
+        display: inline-block;
+        background: #ff9800;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      .question-text {
+        font-size: 1.05rem;
+        color: #333;
+        margin-bottom: 12px;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      .options-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .option-btn {
+        background: white;
+        border: 2px solid #ffe082;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #5d4037;
+        transition: all 0.2s;
+        text-align: center;
+      }
+
+      .option-btn:hover {
+        background: #ffe082;
+        transform: translateY(-2px);
+      }
+
+      /* 3D Spin Wheel Control */
+      .spin-area {
+        text-align: center;
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 2px solid #e0e0e0;
+      }
+
+      .wheel-wrapper {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 10px 0;
+      }
+
+      .wheel-pointer {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-top: 20px solid #d32f2f;
+        z-index: 20;
+        filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.4));
+      }
+
+      .wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 5px solid #333;
+        position: relative;
+        overflow: hidden;
+        transition: transform 3s cubic-bezier(0.15, 0.9, 0.15, 1);
+        background: conic-gradient(
+          #ef5350 0deg 60deg,
+          #ab47bc 60deg 120deg,
+          #42a5f5 120deg 180deg,
+          #26a69a 180deg 240deg,
+          #ffca28 240deg 300deg,
+          #ffa726 300deg 360deg
+        );
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .wheel-num {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: white;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+      }
+
+      .num-1 {
+        transform: rotate(30deg);
+        padding-top: 8px;
+      }
+      .num-2 {
+        transform: rotate(90deg);
+        padding-top: 8px;
+      }
+      .num-3 {
+        transform: rotate(150deg);
+        padding-top: 8px;
+      }
+      .num-4 {
+        transform: rotate(210deg);
+        padding-top: 8px;
+      }
+      .num-5 {
+        transform: rotate(270deg);
+        padding-top: 8px;
+      }
+      .num-6 {
+        transform: rotate(330deg);
+        padding-top: 8px;
+      }
+
+      .spin-result {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2e7d32;
+        margin-top: 5px;
+        height: 25px;
+      }
+
+      .btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 25px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+        width: 100%;
+      }
+
+      .btn:disabled {
+        background-color: #b0bec5;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .btn-restart {
+        background-color: #ef5350;
+      }
+
+      @media (max-width: 600px) {
         .board-container {
-            position: relative;
-            width: 520px;
-            height: 520px;
-            background: #ffffff;
-            border: 10px solid #2e7d32;
-            border-radius: 20px;
-            box-shadow: 0 30px 50px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.2);
-            transform: rotateX(28deg) rotateZ(-2deg);
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease;
+          width: 330px;
+          height: 330px;
+          transform: rotateX(15deg);
         }
-
-        .board-container:hover {
-            transform: rotateX(18deg) rotateZ(0deg);
-        }
-
-        /* Canvas Overlay untuk Gambar Ular & Tangga 3D */
-        #board-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        .board-grid {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            width: 100%;
-            height: 100%;
-            position: relative;
-            z-index: 2;
-        }
-
         .cell {
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
-            padding: 2px 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #333;
-            position: relative;
-            cursor: pointer;
-            transition: background-color 0.2s;
+          font-size: 0.55rem;
         }
-
-        .cell-100 {
-            background-color: #ffe082 !important;
-        }
-
-        /* Target Cell Highlight Animation */
-        .cell.target-highlight {
-            animation: glow 1s infinite alternate;
-            cursor: pointer !important;
-            z-index: 10;
-        }
-
-        @keyframes glow {
-            from { background-color: #fff59d; box-shadow: inset 0 0 10px #fbc02d; }
-            to { background-color: #ffee58; box-shadow: inset 0 0 20px #f57f17; }
-        }
-
-        /* 3D Player Token */
         .player-token {
-            width: 32px;
-            height: 32px;
-            background: radial-gradient(circle at 30% 30%, #ff4081, #c2185b);
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            position: absolute;
-            z-index: 100;
-            box-shadow: 0 10px 15px rgba(0,0,0,0.5), inset -2px -2px 6px rgba(0,0,0,0.4);
-            transition: left 0.4s ease, top 0.4s ease, transform 0.4s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.1rem;
-            transform: translateZ(20px);
+          width: 22px;
+          height: 22px;
+          font-size: 0.75rem;
         }
-
-        /* Control Panel / Quiz Panel */
-        .panel {
-            flex: 1;
-            min-width: 300px;
-            max-width: 450px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            color: #333;
+        .user-avatar {
+          width: 45px;
+          height: 45px;
         }
-
-        .status-box {
-            background: #e8f5e9;
-            padding: 12px 18px;
-            border-radius: 12px;
-            font-weight: bold;
-            color: #1b5e20;
-            display: flex;
-            justify-content: space-between;
-            border: 2px solid #a5d6a7;
+        h1 {
+          font-size: 1.3rem;
+          margin-left: 50px;
         }
-
-        .instruction-banner {
-            background: #e1f5fe;
-            border: 2px solid #81d4fa;
-            color: #0277bd;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 0.95rem;
-        }
-
-        .quiz-box {
-            background: #fff8e1;
-            border: 2px solid #ffe082;
-            padding: 15px;
-            border-radius: 15px;
-        }
-
-        .subject-badge {
-            display: inline-block;
-            background: #ff9800;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .question-text {
-            font-size: 1.05rem;
-            color: #333;
-            margin-bottom: 12px;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .option-btn {
-            background: white;
-            border: 2px solid #ffe082;
-            padding: 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #5d4037;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .option-btn:hover {
-            background: #ffe082;
-            transform: translateY(-2px);
-        }
-
-        /* 3D Spin Wheel Control */
-        .spin-area {
-            text-align: center;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border: 2px solid #e0e0e0;
-        }
-
-        .wheel-wrapper {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            margin: 10px 0;
-        }
-
-        .wheel-pointer {
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-top: 20px solid #d32f2f;
-            z-index: 20;
-            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.4));
-        }
-
-        .wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 5px solid #333;
-            position: relative;
-            overflow: hidden;
-            transition: transform 3s cubic-bezier(0.15, 0.9, 0.15, 1);
-            background: conic-gradient(
-                #ef5350 0deg 60deg,
-                #ab47bc 60deg 120deg,
-                #42a5f5 120deg 180deg,
-                #26a69a 180deg 240deg,
-                #ffca28 240deg 300deg,
-                #ffa726 300deg 360deg
-            );
-            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
-        }
-
-        .wheel-num {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: white;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-        }
-
-        .num-1 { transform: rotate(30deg); padding-top: 8px; }
-        .num-2 { transform: rotate(90deg); padding-top: 8px; }
-        .num-3 { transform: rotate(150deg); padding-top: 8px; }
-        .num-4 { transform: rotate(210deg); padding-top: 8px; }
-        .num-5 { transform: rotate(270deg); padding-top: 8px; }
-        .num-6 { transform: rotate(330deg); padding-top: 8px; }
-
-        .spin-result {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #2e7d32;
-            margin-top: 5px;
-            height: 25px;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .btn:disabled {
-            background-color: #b0bec5;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .btn-restart {
-            background-color: #ef5350;
-        }
-
-        @media (max-width: 600px) {
-            .board-container {
-                width: 330px;
-                height: 330px;
-                transform: rotateX(15deg);
-            }
-            .cell { font-size: 0.55rem; }
-            .player-token { width: 22px; height: 22px; font-size: 0.75rem; }
-        }
+      }
     </style>
-</head>
-<body>
-
-    <h1>🎲 Games Mu'adz</h1>
+  </head>
+  <body>
+    <!-- Header dengan Avatar Bulat di Kiri Atas -->
+    <div class="header-container">
+      <img
+        src="./image/aa.jpg"
+        alt="Foto Profil Pemain"
+        class="user-avatar"
+        id="user-avatar"
+        title="Profil Pemain"
+      />
+      <h1>🎲 Game Mu'adz</h1>
+    </div>
 
     <div class="game-wrapper">
-        <!-- Papan 3D Viewport -->
-        <div class="board-viewport">
-            <div class="board-container" id="board-container">
-                <canvas id="board-canvas" width="500" height="500"></canvas>
-                <div class="board-grid" id="board-grid"></div>
-                <div class="player-token" id="player-token">🏃</div>
-            </div>
+      <!-- Papan 3D Viewport -->
+      <div class="board-viewport">
+        <div class="board-container" id="board-container">
+          <canvas id="board-canvas" width="500" height="500"></canvas>
+          <div class="board-grid" id="board-grid"></div>
+          <div class="player-token" id="player-token">🏃</div>
+        </div>
+      </div>
+
+      <!-- Panel Kontrol & Soal -->
+      <div class="panel">
+        <div class="status-box">
+          <div>Posisi Pemain: Kotak <span id="pos-display">1</span> / 100</div>
+          <div class="wrong-counter-badge">
+            Salah: <span id="wrong-count-display">0</span>/2
+          </div>
         </div>
 
-        <!-- Panel Kontrol & Soal -->
-        <div class="panel">
-            <div class="status-box">
-                <span>Posisi Pemain:</span>
-                <span>Kotak <span id="pos-display">1</span> / 100</span>
-            </div>
-
-            <div class="instruction-banner" id="instruction-banner">
-                1. Jawab soal cerita terlebih dahulu!
-            </div>
-
-            <!-- Box Tantangan Soal -->
-            <div class="quiz-box" id="quiz-box">
-                <span class="subject-badge" id="subject-badge">MATEMATIKA</span>
-                <div class="question-text" id="question-text">Jawab pertanyaan untuk memutar roda spin...</div>
-                <div class="options-grid" id="options-container"></div>
-            </div>
-
-            <!-- Box Roda Spin -->
-            <div class="spin-area">
-                <div class="wheel-wrapper">
-                    <div class="wheel-pointer"></div>
-                    <div class="wheel" id="wheel">
-                        <div class="wheel-num num-1">1</div>
-                        <div class="wheel-num num-2">2</div>
-                        <div class="wheel-num num-3">3</div>
-                        <div class="wheel-num num-4">4</div>
-                        <div class="wheel-num num-5">5</div>
-                        <div class="wheel-num num-6">6</div>
-                    </div>
-                </div>
-                <div class="spin-result" id="spin-result"></div>
-                <button class="btn" id="btn-spin" disabled>🎡 Putar Roda Spin</button>
-            </div>
-
-            <button class="btn btn-restart" id="btn-restart">🔄 Ulangi dari Awal</button>
+        <div class="instruction-banner" id="instruction-banner">
+          1. Jawab soal cerita terlebih dahulu!
         </div>
+
+        <!-- Box Tantangan Soal -->
+        <div class="quiz-box" id="quiz-box">
+          <span class="subject-badge" id="subject-badge">MATEMATIKA</span>
+          <div class="question-text" id="question-text">
+            Jawab pertanyaan untuk memutar roda spin...
+          </div>
+          <div class="options-grid" id="options-container"></div>
+        </div>
+
+        <!-- Box Roda Spin -->
+        <div class="spin-area">
+          <div class="wheel-wrapper">
+            <div class="wheel-pointer"></div>
+            <div class="wheel" id="wheel">
+              <div class="wheel-num num-1">1</div>
+              <div class="wheel-num num-2">2</div>
+              <div class="wheel-num num-3">3</div>
+              <div class="wheel-num num-4">4</div>
+              <div class="wheel-num num-5">5</div>
+              <div class="wheel-num num-6">6</div>
+            </div>
+          </div>
+          <div class="spin-result" id="spin-result"></div>
+          <button class="btn" id="btn-spin" disabled>🎡 Putar Roda Spin</button>
+        </div>
+
+        <button class="btn btn-restart" id="btn-restart">
+          🔄 Ulangi dari Awal
+        </button>
+      </div>
     </div>
 
     <script>
-        // === AUDIO SFX (Web Audio API) ===
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        let audioCtx;
+      // === AUDIO SFX (Web Audio API) ===
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      let audioCtx;
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+      function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+      }
+
+      function playSound(type) {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === "correct") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.3,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === "wrong") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+          osc.frequency.linearRampToValueAtTime(
+            110,
+            audioCtx.currentTime + 0.3,
+          );
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.3,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === "reset") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(
+            100,
+            audioCtx.currentTime + 0.6,
+          );
+          gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.6,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.6);
+        } else if (type === "step") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.1,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === "ladder") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(
+            800,
+            audioCtx.currentTime + 0.4,
+          );
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.4,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === "snake") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(
+            200,
+            audioCtx.currentTime + 0.4,
+          );
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.001,
+            audioCtx.currentTime + 0.4,
+          );
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.4);
         }
+      }
 
-        function playSound(type) {
-            initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+      // === MAP ULAR & TANGGA ===
+      const ladders = [
+        { from: 4, to: 14 },
+        { from: 9, to: 31 },
+        { from: 20, to: 38 },
+        { from: 28, to: 84 },
+        { from: 40, to: 59 },
+        { from: 51, to: 67 },
+        { from: 63, to: 81 },
+        { from: 71, to: 91 },
+      ];
 
-            if (type === 'correct') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if (type === 'wrong') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-            } else if (type === 'step') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'ladder') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-            } else if (type === 'snake') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.4);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-            }
+      const snakes = [
+        { from: 17, to: 7, color: "#e91e63" },
+        { from: 54, to: 34, color: "#9c27b0" },
+        { from: 62, to: 19, color: "#ff5722" },
+        { from: 64, to: 60, color: "#00bcd4" },
+        { from: 87, to: 24, color: "#e91e63" },
+        { from: 93, to: 73, color: "#4caf50" },
+        { from: 95, to: 75, color: "#ff9800" },
+        { from: 99, to: 78, color: "#f44336" },
+      ];
+
+      const snakesAndLaddersMap = {};
+      ladders.forEach((l) => (snakesAndLaddersMap[l.from] = l.to));
+      snakes.forEach((s) => (snakesAndLaddersMap[s.from] = s.to));
+
+      let playerPosition = 1;
+      let wrongAttempts = 0; // Hitungan salah jawab berturut-turut
+      let currentCorrectAnswer = null;
+      let currentRotation = 0;
+      let pendingSpinResult = 0;
+      let waitingForUserClick = false;
+
+      const cellColors = [
+        "#ef5350",
+        "#ab47bc",
+        "#42a5f5",
+        "#26a69a",
+        "#d4e157",
+        "#ffca28",
+        "#ffa726",
+        "#8d6e63",
+        "#ec407a",
+        "#78909c",
+      ];
+
+      // === BANK 100 SOAL CERITA (IPA, IPS, MATEMATIKA) ===
+      const storyQuestions = [
+        // MATEMATIKA (1-34)
+        {
+          id: 1,
+          subject: "MATEMATIKA",
+          q: "Budi memiliki 15 apel. Ibu memberikan lagi 12 apel. Berapa jumlah apel Budi sekarang?",
+          a: "27",
+          opts: ["25", "27", "28", "30"],
+        },
+        {
+          id: 2,
+          subject: "MATEMATIKA",
+          q: "Siti membawa 25 roti ke sekolah. Sebanyak 10 roti dibagikan ke teman. Berapa sisa roti Siti?",
+          a: "15",
+          opts: ["15", "12", "18", "20"],
+        },
+        {
+          id: 3,
+          subject: "MATEMATIKA",
+          q: "Ada 4 kotak pensil. Setiap kotak berisi 5 pensil. Berapa total seluruh pensil?",
+          a: "20",
+          opts: ["15", "18", "20", "24"],
+        },
+        {
+          id: 4,
+          subject: "MATEMATIKA",
+          q: "Dini membeli 18 permen, lalu dimakan 6 permen. Berapa sisa permen Dini?",
+          a: "12",
+          opts: ["10", "12", "14", "15"],
+        },
+        {
+          id: 5,
+          subject: "MATEMATIKA",
+          q: "Pak Tani memanen 35 semangka, lalu dijual 15 semangka. Berapa sisa semangka Pak Tani?",
+          a: "20",
+          opts: ["15", "20", "25", "30"],
+        },
+        {
+          id: 6,
+          subject: "MATEMATIKA",
+          q: "Bagas mempunyai 3 bungkus kelereng. Setiap bungkus berisi 6 kelereng. Berapa total kelereng Bagas?",
+          a: "18",
+          opts: ["12", "15", "18", "21"],
+        },
+        {
+          id: 7,
+          subject: "MATEMATIKA",
+          q: "Di taman ada 14 burung hinggap di pohon. Datang lagi 8 burung. Berapa total burung di pohon?",
+          a: "22",
+          opts: ["20", "21", "22", "24"],
+        },
+        {
+          id: 8,
+          subject: "MATEMATIKA",
+          q: "Ibu memiliki 24 telur. Dipakai membuat kue 8 telur. Berapa sisa telur Ibu?",
+          a: "16",
+          opts: ["14", "16", "18", "20"],
+        },
+        {
+          id: 9,
+          subject: "MATEMATIKA",
+          q: "Eko memiliki 5 saku baju. Setiap saku berisi 4 uang koin. Berapa jumlah seluruh koin Eko?",
+          a: "20",
+          opts: ["15", "18", "20", "25"],
+        },
+        {
+          id: 10,
+          subject: "MATEMATIKA",
+          q: "Ayah membeli 40 ikan mas, dipindahkan ke kolam 18 ikan. Berapa sisa ikan di wadah?",
+          a: "22",
+          opts: ["20", "22", "24", "26"],
+        },
+        {
+          id: 11,
+          subject: "MATEMATIKA",
+          q: "Lani memiliki 12 spidol warna merah dan 15 spidol biru. Berapa total spidol Lani?",
+          a: "27",
+          opts: ["25", "26", "27", "29"],
+        },
+        {
+          id: 12,
+          subject: "MATEMATIKA",
+          q: "Ada 16 anak bermain di lapangan. Pulang ke rumah 5 anak. Berapa anak yang tersisa di lapangan?",
+          a: "11",
+          opts: ["9", "10", "11", "12"],
+        },
+        {
+          id: 13,
+          subject: "MATEMATIKA",
+          q: "Pak RT menanam 6 baris pohon. Setiap baris ada 4 pohon. Berapa jumlah seluruh pohon?",
+          a: "24",
+          opts: ["20", "22", "24", "28"],
+        },
+        {
+          id: 14,
+          subject: "MATEMATIKA",
+          q: "Rudi punya 50 kelereng. Diberikan kepada adiknya 20 kelereng. Berapa sisa kelereng Rudi?",
+          a: "30",
+          opts: ["25", "30", "35", "40"],
+        },
+        {
+          id: 15,
+          subject: "MATEMATIKA",
+          q: "Di rak buku ada 28 buku cerita. Ditambah lagi 12 buku. Berapa total buku di rak?",
+          a: "40",
+          opts: ["35", "38", "40", "42"],
+        },
+        {
+          id: 16,
+          subject: "MATEMATIKA",
+          q: "Mita membeli 5 kemasan biskuit. Setiap kemasan ada 5 biskuit. Berapa total biskuit Mita?",
+          a: "25",
+          opts: ["20", "25", "30", "35"],
+        },
+        {
+          id: 17,
+          subject: "MATEMATIKA",
+          q: "Di kolam ada 30 ekor bebek. Berenang pergi 12 ekor. Berapa bebek yang tersisa di kolam?",
+          a: "18",
+          opts: ["16", "18", "20", "22"],
+        },
+        {
+          id: 18,
+          subject: "MATEMATIKA",
+          q: "Doni memetik 17 jeruk di kebun. Kaka memetik 14 jeruk. Berapa total jeruk yang dipetik?",
+          a: "31",
+          opts: ["29", "30", "31", "33"],
+        },
+        {
+          id: 19,
+          subject: "MATEMATIKA",
+          q: "Kakak membeli 3 kotak pensil warna. Setiap kotak berisi 8 pensil. Berapa total pensil warna?",
+          a: "24",
+          opts: ["18", "21", "24", "27"],
+        },
+        {
+          id: 20,
+          subject: "MATEMATIKA",
+          q: "Toko baju punya 45 kaos. Terjual 20 kaos hari ini. Berapa sisa kaos di toko?",
+          a: "25",
+          opts: ["20", "25", "30", "35"],
+        },
+        {
+          id: 21,
+          subject: "MATEMATIKA",
+          q: "Di kelas 2 ada 18 siswa laki-laki dan 16 siswa perempuan. Berapa jumlah seluruh siswa?",
+          a: "34",
+          opts: ["32", "33", "34", "36"],
+        },
+        {
+          id: 22,
+          subject: "MATEMATIKA",
+          q: "Ani menyimpan 38 koin. Dipakai belanja 15 koin. Berapa sisa koin Ani?",
+          a: "23",
+          opts: ["21", "23", "25", "27"],
+        },
+        {
+          id: 23,
+          subject: "MATEMATIKA",
+          q: "Peternak punya 4 kandang ayam. Setiap kandang ada 10 ayam. Berapa total seluruh ayam?",
+          a: "40",
+          opts: ["30", "35", "40", "45"],
+        },
+        {
+          id: 24,
+          subject: "MATEMATIKA",
+          q: "Ada 26 mangga di keranjang. Ibu mengambil 9 mangga. Berapa sisa mangga di keranjang?",
+          a: "17",
+          opts: ["15", "16", "17", "18"],
+        },
+        {
+          id: 25,
+          subject: "MATEMATIKA",
+          q: "Dodi punya 19 buku gambar. Dibelikan ayah lagi 11 buku. Berapa total buku gambar Dodi?",
+          a: "30",
+          opts: ["28", "29", "30", "32"],
+        },
+        {
+          id: 26,
+          subject: "MATEMATIKA",
+          q: "Paman membuat 2 baris meja. Setiap baris ada 7 meja. Berapa total meja buatan Paman?",
+          a: "14",
+          opts: ["12", "14", "16", "18"],
+        },
+        {
+          id: 27,
+          subject: "MATEMATIKA",
+          q: "Di toko ada 60 balon. Meletus 15 balon. Berapa sisa balon yang masih utuh?",
+          a: "45",
+          opts: ["40", "45", "50", "55"],
+        },
+        {
+          id: 28,
+          subject: "MATEMATIKA",
+          q: "Nina memelihara 13 kelinci putih dan 9 kelinci cokelat. Berapa total kelinci Nina?",
+          a: "22",
+          opts: ["20", "21", "22", "23"],
+        },
+        {
+          id: 29,
+          subject: "MATEMATIKA",
+          q: "Di piring ada 20 kue sus. Dimakan anak-anak 14 kue. Berapa sisa kue sus di piring?",
+          a: "6",
+          opts: ["4", "5", "6", "8"],
+        },
+        {
+          id: 30,
+          subject: "MATEMATIKA",
+          q: "Ada 3 meja belajar. Di atas setiap meja ada 7 buku. Berapa jumlah seluruh buku?",
+          a: "21",
+          opts: ["18", "20", "21", "24"],
+        },
+        {
+          id: 31,
+          subject: "MATEMATIKA",
+          q: "Nenek membeli 32 pisang. Diberikan ke tetangga 12 pisang. Berapa sisa pisang Nenek?",
+          a: "20",
+          opts: ["18", "20", "22", "24"],
+        },
+        {
+          id: 32,
+          subject: "MATEMATIKA",
+          q: "Bayu punya 25 perangko. Mendapat hadiah lagi 15 perangko. Berapa total perangko Bayu?",
+          a: "40",
+          opts: ["35", "38", "40", "45"],
+        },
+        {
+          id: 33,
+          subject: "MATEMATIKA",
+          q: "Di dalam bus ada 36 penumpang. Turun di halte 16 orang. Berapa sisa penumpang di bus?",
+          a: "20",
+          opts: ["18", "20", "22", "24"],
+        },
+        {
+          id: 34,
+          subject: "MATEMATIKA",
+          q: "Rina menata 4 vas bunga. Setiap vas berisi 8 bunga. Berapa jumlah seluruh bunga?",
+          a: "32",
+          opts: ["28", "30", "32", "36"],
+        },
+
+        // IPA (35-67)
+        {
+          id: 35,
+          subject: "IPA",
+          q: "Budi melihat ikan berenang lincah di dalam akuarium. Ikan tersebut bernapas menggunakan...",
+          a: "Insang",
+          opts: ["Paru-paru", "Insang", "Kulit", "Trakea"],
+        },
+        {
+          id: 36,
+          subject: "IPA",
+          q: "Siti menyiram tanaman di kebun. Bagian tumbuhan yang berada di dalam tanah menyerap air adalah...",
+          a: "Akar",
+          opts: ["Daun", "Bunga", "Akar", "Batang"],
+        },
+        {
+          id: 37,
+          subject: "IPA",
+          q: "Eko memegang batu sungai yang keras dan tidak berubah bentuk. Batu termasuk benda...",
+          a: "Padat",
+          opts: ["Padat", "Cair", "Gas", "Uap"],
+        },
+        {
+          id: 38,
+          subject: "IPA",
+          q: "Pada pagi hari, Dino melihat Matahari mulai muncul di ufuk langit sebelah...",
+          a: "Timur",
+          opts: ["Barat", "Timur", "Utara", "Selatan"],
+        },
+        {
+          id: 39,
+          subject: "IPA",
+          q: "Ibu menuangkan minyak goreng ke wajan. Minyak goreng merupakan contoh dari benda...",
+          a: "Cair",
+          opts: ["Padat", "Cair", "Gas", "Angin"],
+        },
+        {
+          id: 40,
+          subject: "IPA",
+          q: "Kucing di rumah melahirkan anak-anaknya. Sedangkan ayam berkembang biak dengan cara...",
+          a: "Bertelur",
+          opts: ["Melahirkan", "Bertelur", "Beranak", "Membelah diri"],
+        },
+        {
+          id: 41,
+          subject: "IPA",
+          q: "Saat berolahraga, kita menghirup udara segar ke dalam tubuh menggunakan organ...",
+          a: "Hidung",
+          opts: ["Mata", "Telinga", "Hidung", "Mulut"],
+        },
+        {
+          id: 42,
+          subject: "IPA",
+          q: "Bayu meniup balon hingga membesar. Udara di dalam balon tersebut termasuk benda...",
+          a: "Gas",
+          opts: ["Padat", "Cair", "Gas", "Keras"],
+        },
+        {
+          id: 43,
+          subject: "IPA",
+          q: "Pohon mangga di halaman rumah mempunyai daun hijau. Warna hijau daun disebabkan oleh...",
+          a: "Klorofil",
+          opts: ["Klorofil", "Air", "Tanah", "Batang"],
+        },
+        {
+          id: 44,
+          subject: "IPA",
+          q: "Katak hidup di dua alam, yaitu di darat dan di air. Hewan seperti katak dinamakan...",
+          a: "Amfibi",
+          opts: ["Mamalia", "Amfibi", "Reptil", "Burung"],
+        },
+        {
+          id: 45,
+          subject: "IPA",
+          q: "Saat malam hari, langit menjadi gelap. Benda langit yang memancarkan cahaya sendiri adalah...",
+          a: "Bintang",
+          opts: ["Bulan", "Bintang", "Awan", "Pelangi"],
+        },
+        {
+          id: 46,
+          subject: "IPA",
+          q: "Sapi memakan rumput segar di padang rumput. Berdasarkan jenis makanannya, sapi tergolong...",
+          a: "Herbivora",
+          opts: ["Karnivora", "Herbivora", "Omnivora", "Insektivora"],
+        },
+        {
+          id: 47,
+          subject: "IPA",
+          q: "Kucing berburu tikus untuk dimakan. Hewan pemakan daging seperti kucing disebut...",
+          a: "Karnivora",
+          opts: ["Herbivora", "Karnivora", "Omnivora", "Pengurai"],
+        },
+        {
+          id: 48,
+          subject: "IPA",
+          q: "Ayam memakan biji jagung sekaligus cacing tanah. Hewan pemakan segala disebut...",
+          a: "Omnivora",
+          opts: ["Herbivora", "Karnivora", "Omnivora", "Amfibi"],
+        },
+        {
+          id: 49,
+          subject: "IPA",
+          q: "Lani es batu yang diletakkan di tempat terbuka perlahan menjadi air. Perubahan ini disebut...",
+          a: "Mencair",
+          opts: ["Membeku", "Mencair", "Menguap", "Menyublim"],
+        },
+        {
+          id: 50,
+          subject: "IPA",
+          q: "Air di dalam freezer kulkas berubah menjadi es keras. Perubahan benda cair menjadi padat disebut...",
+          a: "Membeku",
+          opts: ["Mencair", "Membeku", "Menguap", "Mengembun"],
+        },
+        {
+          id: 51,
+          subject: "IPA",
+          q: "Ibu memasak air di teko hingga mendidih dan keluar uap. Perubahan air menjadi uap disebut...",
+          a: "Menguap",
+          opts: ["Menguap", "Membeku", "Mencair", "Mengkristal"],
+        },
+        {
+          id: 52,
+          subject: "IPA",
+          q: "Dini mendengarkan suara musik yang merdu. Organ tubuh manusia untuk mendengar suara adalah...",
+          a: "Telinga",
+          opts: ["Mata", "Telinga", "Hidung", "Lidah"],
+        },
+        {
+          id: 53,
+          subject: "IPA",
+          q: "Rudi melihat pemandangan indah di pegunungan. Organ tubuh yang berfungsi untuk melihat adalah...",
+          a: "Mata",
+          opts: ["Mata", "Telinga", "Kulit", "Hidung"],
+        },
+        {
+          id: 54,
+          subject: "IPA",
+          q: "Ani merasakan permukaan buah durian yang kasar dan licinnya buah apel menggunakan...",
+          a: "Kulit",
+          opts: ["Lidah", "Kulit", "Mata", "Telinga"],
+        },
+        {
+          id: 55,
+          subject: "IPA",
+          q: "Doni dapat membedakan rasa manis gula dan asin garam menggunakan organ panca indra...",
+          a: "Lidah",
+          opts: ["Lidah", "Hidung", "Kulit", "Telinga"],
+        },
+        {
+          id: 56,
+          subject: "IPA",
+          q: "Tumbuhan hijau membutuhkan sinar Matahari untuk membuat makanan sendiri melalui proses...",
+          a: "Fotosintesis",
+          opts: ["Fotosintesis", "Pernapasan", "Penguapan", "Cangkok"],
+        },
+        {
+          id: 57,
+          subject: "IPA",
+          q: "Nyamuk berkembang biak di tempat air tergenang. Nyamuk menetas dari telur menjadi...",
+          a: "Jentik-jentik",
+          opts: ["Ulat", "Jentik-jentik", "Kepompong", "Kecoa"],
+        },
+        {
+          id: 58,
+          subject: "IPA",
+          q: "Kupu-kupu yang indah berasal dari ulat yang diam membungkus diri menjadi...",
+          a: "Kepompong",
+          opts: ["Jentik-jentik", "Kepompong", "Telur", "Bunga"],
+        },
+        {
+          id: 59,
+          subject: "IPA",
+          q: "Bagian tumbuhan yang berfungsi sebagai tempat munculnya bunga dan buah serta menegakkan tumbuhan adalah...",
+          a: "Batang",
+          opts: ["Akar", "Batang", "Daun", "Biji"],
+        },
+        {
+          id: 60,
+          subject: "IPA",
+          q: "Bagian tumbuhan yang cantik dan berwarna-warni menarik perhatian serangga adalah...",
+          a: "Bunga",
+          opts: ["Daun", "Akar", "Bunga", "Biji"],
+        },
+        {
+          id: 61,
+          subject: "IPA",
+          q: "Manusia membutuhkan oksigen untuk bernapas. Organ utama pernapasan manusia adalah...",
+          a: "Paru-paru",
+          opts: ["Jantung", "Hati", "Paru-paru", "Lambung"],
+        },
+        {
+          id: 62,
+          subject: "IPA",
+          q: "Darah dipompa ke seluruh tubuh manusia secara terus-menerus oleh organ...",
+          a: "Jantung",
+          opts: ["Paru-paru", "Jantung", "Lambung", "Ginjal"],
+        },
+        {
+          id: 63,
+          subject: "IPA",
+          q: "Makanan yang kita makan diproses dan dicerna di dalam perut oleh organ...",
+          a: "Lambung",
+          opts: ["Jantung", "Paru-paru", "Lambung", "Otak"],
+        },
+        {
+          id: 64,
+          subject: "IPA",
+          q: "Burung dapat terbang tinggi di udara karena memiliki anggota tubuh berupa...",
+          a: "Sayap",
+          opts: ["Sirip", "Sayap", "Kaki", "Ekor"],
+        },
+        {
+          id: 65,
+          subject: "IPA",
+          q: "Cicak dapat meloloskan diri dari kejaran musuh dengan cara memutuskan ekornya yang disebut...",
+          a: "Autotomi",
+          opts: ["Mimikri", "Autotomi", "Adaptasi", "Hibernasi"],
+        },
+        {
+          id: 66,
+          subject: "IPA",
+          q: "Bunglon dapat mengubah warna kulitnya sesuai tempat ia hinggap. Kemampuan ini disebut...",
+          a: "Mimikri",
+          opts: ["Autotomi", "Mimikri", "Fotosintesis", "Ekolokasi"],
+        },
+        {
+          id: 67,
+          subject: "IPA",
+          q: "Pohon jati menggugurkan daunnya pada musim kemarau untuk mengurangi penguapan air. Ini bentuk...",
+          a: "Adaptasi",
+          opts: ["Autotomi", "Mimikri", "Adaptasi", "Fotosintesis"],
+        },
+
+        // IPS (68-100)
+        {
+          id: 68,
+          subject: "IPS",
+          q: "Siti baru saja lahir. Orang tua Siti mengurus dokumen penting pencatatan kelahiran yaitu...",
+          a: "Akta Kelahiran",
+          opts: ["KTP", "Akta Kelahiran", "SIM", "Paspor"],
+        },
+        {
+          id: 69,
+          subject: "IPS",
+          q: "Budi memanggil ayah dari orang tuanya dengan sebutan...",
+          a: "Kakek",
+          opts: ["Paman", "Kakek", "Nenek", "Abang"],
+        },
+        {
+          id: 70,
+          subject: "IPS",
+          q: "Warga desa bekerjasama membersihkan saluran air bersama-sama. Kegiatan ini dinamakan...",
+          a: "Gotong royong",
+          opts: ["Gotong royong", "Mandiri", "Bermain", "Ujian"],
+        },
+        {
+          id: 71,
+          subject: "IPS",
+          q: "Di dalam lingkungan sekolah, tugas utama seorang murid adalah...",
+          a: "Belajar",
+          opts: ["Mengajar", "Belajar", "Menjaga gerbang", "Membuat soal"],
+        },
+        {
+          id: 72,
+          subject: "IPS",
+          q: "Ayah bekerja keras setiap hari untuk memenuhi kebutuhan keluarga. Ayah berperan sebagai...",
+          a: "Kepala keluarga",
+          opts: ["Kepala sekolah", "Kepala keluarga", "Murid", "Tetangga"],
+        },
+        {
+          id: 73,
+          subject: "IPS",
+          q: "Ibu pergi ke tempat transaksi penjual dan pembeli bertemu untuk membeli sayur. Tempat itu adalah...",
+          a: "Pasar",
+          opts: ["Sekolah", "Pasar", "Rumah Sakit", "Stasiun"],
+        },
+        {
+          id: 74,
+          subject: "IPS",
+          q: "Dokumen diri berfoto yang wajib dimiliki setiap warga negara yang sudah berusia 17 tahun adalah...",
+          a: "KTP",
+          opts: ["KTP", "Rapor", "Kartu Pelajar", "Tabungan"],
+        },
+        {
+          id: 75,
+          subject: "IPS",
+          q: "Ibu dari ayah atau ibu kita panggil dengan sebutan...",
+          a: "Nenek",
+          opts: ["Bibi", "Nenek", "Kakak", "Kakek"],
+        },
+        {
+          id: 76,
+          subject: "IPS",
+          q: "Saudara laki-laki dari ayah atau ibu kita dipanggil...",
+          a: "Paman",
+          opts: ["Paman", "Kakek", "Abang", "Bapak"],
+        },
+        {
+          id: 77,
+          subject: "IPS",
+          q: "Saudara perempuan dari ayah atau ibu kita dipanggil...",
+          a: "Bibi",
+          opts: ["Nenek", "Bibi", "Kakak", "Ibu"],
+        },
+        {
+          id: 78,
+          subject: "IPS",
+          q: "Simbol negara Indonesia yang cengkeramannya memegang pita Bhinneka Tunggal Ika adalah...",
+          a: "Garuda Pancasila",
+          opts: [
+            "Bendera Merah Putih",
+            "Garuda Pancasila",
+            "Lagu Indonesia Raya",
+            "Tugu Monas",
+          ],
+        },
+        {
+          id: 79,
+          subject: "IPS",
+          q: "Bendera kebangsaan negara Indonesia memiliki warna...",
+          a: "Merah Putih",
+          opts: ["Merah Putih", "Hijau Putih", "Kuning Biru", "Merah Biru"],
+        },
+        {
+          id: 80,
+          subject: "IPS",
+          q: "Lagu kebangsaan negara Republik Indonesia adalah...",
+          a: "Indonesia Raya",
+          opts: [
+            "Halo-Halo Bandung",
+            "Indonesia Raya",
+            "Garuda Pancasila",
+            "Maju Tak Gentar",
+          ],
+        },
+        {
+          id: 81,
+          subject: "IPS",
+          q: "Presiden pertama Republik Indonesia yang memproklamasikan kemerdekaan adalah...",
+          a: "Ir. Soekarno",
+          opts: [
+            "Ir. Soekarno",
+            "Drs. Mohammad Hatta",
+            "Pak Jendral",
+            "Ki Hajar Dewantara",
+          ],
+        },
+        {
+          id: 82,
+          subject: "IPS",
+          q: "Tempat berkumpulnya siswa untuk menuntut ilmu bersama guru dinamakan...",
+          a: "Sekolah",
+          opts: ["Pasar", "Sekolah", "Pabrik", "Terminal"],
+        },
+        {
+          id: 83,
+          subject: "IPS",
+          q: "Orang yang tinggal di sebelah rumah kita dinamakan...",
+          a: "Tetangga",
+          opts: ["Tetangga", "Musuh", "Tamu", "Turis"],
+        },
+        {
+          id: 84,
+          subject: "IPS",
+          q: "Jika kita berbuat kesalahan kepada orang lain, sebaiknya kita segera...",
+          a: "Minta maaf",
+          opts: ["Minta maaf", "Lari", "Marah", "Diam saja"],
+        },
+        {
+          id: 85,
+          subject: "IPS",
+          q: "Ketika menerima bantuan dari orang lain, kita harus mengucapkan...",
+          a: "Terima kasih",
+          opts: ["Terima kasih", "Sama-sama", "Hore", "Awas"],
+        },
+        {
+          id: 86,
+          subject: "IPS",
+          q: "Setiap anggota keluarga harus saling mengasihi dan menjaga rukun agar tercipta suasana...",
+          a: "Damai",
+          opts: ["Ramai", "Damai", "Kacau", "Bising"],
+        },
+        {
+          id: 87,
+          subject: "IPS",
+          q: "Candi Borobudur merupakan peninggalan bersejarah agama...",
+          a: "Buddha",
+          opts: ["Hindu", "Buddha", "Islam", "Kristen"],
+        },
+        {
+          id: 88,
+          subject: "IPS",
+          q: "Rumah adat khas dari daerah Sumatra Barat dinamakan...",
+          a: "Rumah Gadang",
+          opts: [
+            "Rumah Joglo",
+            "Rumah Gadang",
+            "Rumah Honai",
+            "Rumah Tongkonan",
+          ],
+        },
+        {
+          id: 89,
+          subject: "IPS",
+          q: "Pakaian adat khas daerah Jawa Tengah dinamakan...",
+          a: "Kebaya",
+          opts: ["Baju Bodo", "Kebaya", "Ulos", "Baju Ulos"],
+        },
+        {
+          id: 90,
+          subject: "IPS",
+          q: "Alat musik tradisional bambu yang dimainkan dengan cara digoyang asal Jawa Barat adalah...",
+          a: "Angklung",
+          opts: ["Sando", "Angklung", "Gamelan", "Tifa"],
+        },
+        {
+          id: 91,
+          subject: "IPS",
+          q: "Alat transportasi tradisional yang ditarik oleh kuda dinamakan...",
+          a: "Delman",
+          opts: ["Becak", "Delman", "Sepeda", "Mobil"],
+        },
+        {
+          id: 92,
+          subject: "IPS",
+          q: "Pengemudi kapal laut disebut...",
+          a: "Nakhoda",
+          opts: ["Pilot", "Masinis", "Nakhoda", "Sopir"],
+        },
+        {
+          id: 93,
+          subject: "IPS",
+          q: "Pengemudi pesawat terbang dinamakan...",
+          a: "Pilot",
+          opts: ["Pilot", "Masinis", "Sopir", "Nakhoda"],
+        },
+        {
+          id: 94,
+          subject: "IPS",
+          q: "Orang yang mengemudikan kereta api dinamakan...",
+          a: "Masinis",
+          opts: ["Sopir", "Masinis", "Pilot", "Nakhoda"],
+        },
+        {
+          id: 95,
+          subject: "IPS",
+          q: "Tempat pemberhentian dan keberangkatan kereta api dinamakan...",
+          a: "Stasiun",
+          opts: ["Terminal", "Stasiun", "Bandara", "Pelabuhan"],
+        },
+        {
+          id: 96,
+          subject: "IPS",
+          q: "Tempat mendarat dan lepas landas pesawat terbang dinamakan...",
+          a: "Bandara",
+          opts: ["Pelabuhan", "Bandara", "Stasiun", "Terminal"],
+        },
+        {
+          id: 97,
+          subject: "IPS",
+          q: "Pekerjaan orang yang menangkap ikan di laut adalah...",
+          a: "Nelayan",
+          opts: ["Petani", "Nelayan", "Peternak", "Pedagang"],
+        },
+        {
+          id: 98,
+          subject: "IPS",
+          q: "Pekerjaan orang yang bercocok tanam padi di sawah adalah...",
+          a: "Petani",
+          opts: ["Petani", "Nelayan", "Koki", "Sopir"],
+        },
+        {
+          id: 99,
+          subject: "IPS",
+          q: "Uang yang kita sisihkan dan kita simpan di celengan dinamakan...",
+          a: "Menabung",
+          opts: ["Jajan", "Menabung", "Hutang", "Beli mainan"],
+        },
+        {
+          id: 100,
+          subject: "IPS",
+          q: "Mata uang resmi negara Indonesia adalah...",
+          a: "Rupiah",
+          opts: ["Ringgit", "Rupiah", "Dolar", "Yen"],
+        },
+      ];
+
+      function getCellCenter(cellNum) {
+        let row = Math.floor((cellNum - 1) / 10);
+        let col = (cellNum - 1) % 10;
+        if (row % 2 === 1) {
+          col = 9 - col;
         }
+        let y = (9 - row) * 50 + 25;
+        let x = col * 50 + 25;
+        return { x, y };
+      }
 
-        // === MAP ULAR & TANGGA ===
-        const ladders = [
-            { from: 4, to: 14 },
-            { from: 9, to: 31 },
-            { from: 20, to: 38 },
-            { from: 28, to: 84 },
-            { from: 40, to: 59 },
-            { from: 51, to: 67 },
-            { from: 63, to: 81 },
-            { from: 71, to: 91 }
-        ];
+      // DRAW 3D GRAPHICS (CANVAS)
+      function drawCanvasGraphics() {
+        const canvas = document.getElementById("board-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const snakes = [
-            { from: 17, to: 7, color: '#e91e63' },
-            { from: 54, to: 34, color: '#9c27b0' },
-            { from: 62, to: 19, color: '#ff5722' },
-            { from: 64, to: 60, color: '#00bcd4' },
-            { from: 87, to: 24, color: '#e91e63' },
-            { from: 93, to: 73, color: '#4caf50' },
-            { from: 95, to: 75, color: '#ff9800' },
-            { from: 99, to: 78, color: '#f44336' }
-        ];
+        // 1. Draw 3D Ladders
+        ladders.forEach((ladder) => {
+          const start = getCellCenter(ladder.from);
+          const end = getCellCenter(ladder.to);
 
-        const snakesAndLaddersMap = {};
-        ladders.forEach(l => snakesAndLaddersMap[l.from] = l.to);
-        snakes.forEach(s => snakesAndLaddersMap[s.from] = s.to);
+          ctx.save();
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const distance = Math.hypot(dx, dy);
+          const angle = Math.atan2(dy, dx);
 
-        let playerPosition = 1;
-        let currentCorrectAnswer = null;
-        let currentRotation = 0;
-        let pendingSpinResult = 0;
-        let waitingForUserClick = false;
+          ctx.translate(start.x, start.y);
+          ctx.rotate(angle);
 
-        const cellColors = [
-            '#ef5350', '#ab47bc', '#42a5f5', '#26a69a', '#d4e157',
-            '#ffca28', '#ffa726', '#8d6e63', '#ec407a', '#78909c'
-        ];
+          // Bayangan Tangga
+          ctx.fillStyle = "rgba(0,0,0,0.25)";
+          ctx.fillRect(0, 6, distance, 5);
+          ctx.fillRect(0, -11, distance, 5);
 
-        // === BANK 100 SOAL CERITA (IPA, IPS, MATEMATIKA) ===
-        const storyQuestions = [
-            // MATEMATIKA (1-34)
-            { id: 1, subject: "MATEMATIKA", q: "Budi memiliki 15 apel. Ibu memberikan lagi 12 apel. Berapa jumlah apel Budi sekarang?", a: "27", opts: ["25", "27", "28", "30"] },
-            { id: 2, subject: "MATEMATIKA", q: "Siti membawa 25 roti ke sekolah. Sebanyak 10 roti dibagikan ke teman. Berapa sisa roti Siti?", a: "15", opts: ["15", "12", "18", "20"] },
-            { id: 3, subject: "MATEMATIKA", q: "Ada 4 kotak pensil. Setiap kotak berisi 5 pensil. Berapa total seluruh pensil?", a: "20", opts: ["15", "18", "20", "24"] },
-            { id: 4, subject: "MATEMATIKA", q: "Dini membeli 18 permen, lalu dimakan 6 permen. Berapa sisa permen Dini?", a: "12", opts: ["10", "12", "14", "15"] },
-            { id: 5, subject: "MATEMATIKA", q: "Pak Tani memanen 35 semangka, lalu dijual 15 semangka. Berapa sisa semangka Pak Tani?", a: "20", opts: ["15", "20", "25", "30"] },
-            { id: 6, subject: "MATEMATIKA", q: "Bagas mempunyai 3 bungkus kelereng. Setiap bungkus berisi 6 kelereng. Berapa total kelereng Bagas?", a: "18", opts: ["12", "15", "18", "21"] },
-            { id: 7, subject: "MATEMATIKA", q: "Di taman ada 14 burung hinggap di pohon. Datang lagi 8 burung. Berapa total burung di pohon?", a: "22", opts: ["20", "21", "22", "24"] },
-            { id: 8, subject: "MATEMATIKA", q: "Ibu memiliki 24 telur. Dipakai membuat kue 8 telur. Berapa sisa telur Ibu?", a: "16", opts: ["14", "16", "18", "20"] },
-            { id: 9, subject: "MATEMATIKA", q: "Eko memiliki 5 saku baju. Setiap saku berisi 4 uang koin. Berapa jumlah seluruh koin Eko?", a: "20", opts: ["15", "18", "20", "25"] },
-            { id: 10, subject: "MATEMATIKA", q: "Ayah membeli 40 ikan mas, dipindahkan ke kolam 18 ikan. Berapa sisa ikan di wadah?", a: "22", opts: ["20", "22", "24", "26"] },
-            { id: 11, subject: "MATEMATIKA", q: "Lani memiliki 12 spidol warna merah dan 15 spidol biru. Berapa total spidol Lani?", a: "27", opts: ["25", "26", "27", "29"] },
-            { id: 12, subject: "MATEMATIKA", q: "Ada 16 anak bermain di lapangan. Pulang ke rumah 5 anak. Berapa anak yang tersisa di lapangan?", a: "11", opts: ["9", "10", "11", "12"] },
-            { id: 13, subject: "MATEMATIKA", q: "Pak RT menanam 6 baris pohon. Setiap baris ada 4 pohon. Berapa jumlah seluruh pohon?", a: "24", opts: ["20", "22", "24", "28"] },
-            { id: 14, subject: "MATEMATIKA", q: "Rudi punya 50 kelereng. Diberikan kepada adiknya 20 kelereng. Berapa sisa kelereng Rudi?", a: "30", opts: ["25", "30", "35", "40"] },
-            { id: 15, subject: "MATEMATIKA", q: "Di rak buku ada 28 buku cerita. Ditambah lagi 12 buku. Berapa total buku di rak?", a: "40", opts: ["35", "38", "40", "42"] },
-            { id: 16, subject: "MATEMATIKA", q: "Mita membeli 5 kemasan biskuit. Setiap kemasan ada 5 biskuit. Berapa total biskuit Mita?", a: "25", opts: ["20", "25", "30", "35"] },
-            { id: 17, subject: "MATEMATIKA", q: "Di kolam ada 30 ekor bebek. Berenang pergi 12 ekor. Berapa bebek yang tersisa di kolam?", a: "18", opts: ["16", "18", "20", "22"] },
-            { id: 18, subject: "MATEMATIKA", q: "Doni memetik 17 jeruk di kebun. Kaka memetik 14 jeruk. Berapa total jeruk yang dipetik?", a: "31", opts: ["29", "30", "31", "33"] },
-            { id: 19, subject: "MATEMATIKA", q: "Kakak membeli 3 kotak pensil warna. Setiap kotak berisi 8 pensil. Berapa total pensil warna?", a: "24", opts: ["18", "21", "24", "27"] },
-            { id: 20, subject: "MATEMATIKA", q: "Toko baju punya 45 kaos. Terjual 20 kaos hari ini. Berapa sisa kaos di toko?", a: "25", opts: ["20", "25", "30", "35"] },
-            { id: 21, subject: "MATEMATIKA", q: "Di kelas 2 ada 18 siswa laki-laki dan 16 siswa perempuan. Berapa jumlah seluruh siswa?", a: "34", opts: ["32", "33", "34", "36"] },
-            { id: 22, subject: "MATEMATIKA", q: "Ani menyimpan 38 koin. Dipakai belanja 15 koin. Berapa sisa koin Ani?", a: "23", opts: ["21", "23", "25", "27"] },
-            { id: 23, subject: "MATEMATIKA", q: "Peternak punya 4 kandang ayam. Setiap kandang ada 10 ayam. Berapa total seluruh ayam?", a: "40", opts: ["30", "35", "40", "45"] },
-            { id: 24, subject: "MATEMATIKA", q: "Ada 26 mangga di keranjang. Ibu mengambil 9 mangga. Berapa sisa mangga di keranjang?", a: "17", opts: ["15", "16", "17", "18"] },
-            { id: 25, subject: "MATEMATIKA", q: "Dodi punya 19 buku gambar. Dibelikan ayah lagi 11 buku. Berapa total buku gambar Dodi?", a: "30", opts: ["28", "29", "30", "32"] },
-            { id: 26, subject: "MATEMATIKA", q: "Paman membuat 2 baris meja. Setiap baris ada 7 meja. Berapa total meja buatan Paman?", a: "14", opts: ["12", "14", "16", "18"] },
-            { id: 27, subject: "MATEMATIKA", q: "Di toko ada 60 balon. Meletus 15 balon. Berapa sisa balon yang masih utuh?", a: "45", opts: ["40", "45", "50", "55"] },
-            { id: 28, subject: "MATEMATIKA", q: "Nina memelihara 13 kelinci putih dan 9 kelinci cokelat. Berapa total kelinci Nina?", a: "22", opts: ["20", "21", "22", "23"] },
-            { id: 29, subject: "MATEMATIKA", q: "Di piring ada 20 kue sus. Dimakan anak-anak 14 kue. Berapa sisa kue sus di piring?", a: "6", opts: ["4", "5", "6", "8"] },
-            { id: 30, subject: "MATEMATIKA", q: "Ada 3 meja belajar. Di atas setiap meja ada 7 buku. Berapa jumlah seluruh buku?", a: "21", opts: ["18", "20", "21", "24"] },
-            { id: 31, subject: "MATEMATIKA", q: "Nenek membeli 32 pisang. Diberikan ke tetangga 12 pisang. Berapa sisa pisang Nenek?", a: "20", opts: ["18", "20", "22", "24"] },
-            { id: 32, subject: "MATEMATIKA", q: "Bayu punya 25 perangko. Mendapat hadiah lagi 15 perangko. Berapa total perangko Bayu?", a: "40", opts: ["35", "38", "40", "45"] },
-            { id: 33, subject: "MATEMATIKA", q: "Di dalam bus ada 36 penumpang. Turun di halte 16 orang. Berapa sisa penumpang di bus?", a: "20", opts: ["18", "20", "22", "24"] },
-            { id: 34, subject: "MATEMATIKA", q: "Rina menata 4 vas bunga. Setiap vas berisi 8 bunga. Berapa jumlah seluruh bunga?", a: "32", opts: ["28", "30", "32", "36"] },
+          // Batang Tangga
+          let woodGrad = ctx.createLinearGradient(0, -15, 0, 15);
+          woodGrad.addColorStop(0, "#8d6e63");
+          woodGrad.addColorStop(0.5, "#5d4037");
+          woodGrad.addColorStop(1, "#3e2723");
 
-            // IPA (35-67)
-            { id: 35, subject: "IPA", q: "Budi melihat ikan berenang lincah di dalam akuarium. Ikan tersebut bernapas menggunakan...", a: "Insang", opts: ["Paru-paru", "Insang", "Kulit", "Trakea"] },
-            { id: 36, subject: "IPA", q: "Siti menyiram tanaman di kebun. Bagian tumbuhan yang berada di dalam tanah menyerap air adalah...", a: "Akar", opts: ["Daun", "Bunga", "Akar", "Batang"] },
-            { id: 37, subject: "IPA", q: "Eko memegang batu sungai yang keras dan tidak berubah bentuk. Batu termasuk benda...", a: "Padat", opts: ["Padat", "Cair", "Gas", "Uap"] },
-            { id: 38, subject: "IPA", q: "Pada pagi hari, Dino melihat Matahari mulai muncul di ufuk langit sebelah...", a: "Timur", opts: ["Barat", "Timur", "Utara", "Selatan"] },
-            { id: 39, subject: "IPA", q: "Ibu menuangkan minyak goreng ke wajan. Minyak goreng merupakan contoh dari benda...", a: "Cair", opts: ["Padat", "Cair", "Gas", "Angin"] },
-            { id: 40, subject: "IPA", q: "Kucing di rumah melahirkan anak-anaknya. Sedangkan ayam berkembang biak dengan cara...", a: "Bertelur", opts: ["Melahirkan", "Bertelur", "Beranak", "Membelah diri"] },
-            { id: 41, subject: "IPA", q: "Saat berolahraga, kita menghirup udara segar ke dalam tubuh menggunakan organ...", a: "Hidung", opts: ["Mata", "Telinga", "Hidung", "Mulut"] },
-            { id: 42, subject: "IPA", q: "Bayu meniup balon hingga membesar. Udara di dalam balon tersebut termasuk benda...", a: "Gas", opts: ["Padat", "Cair", "Gas", "Keras"] },
-            { id: 43, subject: "IPA", q: "Pohon mangga di halaman rumah mempunyai daun hijau. Warna hijau daun disebabkan oleh...", a: "Klorofil", opts: ["Klorofil", "Air", "Tanah", "Batang"] },
-            { id: 44, subject: "IPA", q: "Katak hidup di dua alam, yaitu di darat dan di air. Hewan seperti katak dinamakan...", a: "Amfibi", opts: ["Mamalia", "Amfibi", "Reptil", "Burung"] },
-            { id: 45, subject: "IPA", q: "Saat malam hari, langit menjadi gelap. Benda langit yang memancarkan cahaya sendiri adalah...", a: "Bintang", opts: ["Bulan", "Bintang", "Awan", "Pelangi"] },
-            { id: 46, subject: "IPA", q: "Sapi memakan rumput segar di padang rumput. Berdasarkan jenis makanannya, sapi tergolong...", a: "Herbivora", opts: ["Karnivora", "Herbivora", "Omnivora", "Insektivora"] },
-            { id: 47, subject: "IPA", q: "Kucing berburu tikus untuk dimakan. Hewan pemakan daging seperti kucing disebut...", a: "Karnivora", opts: ["Herbivora", "Karnivora", "Omnivora", "Pengurai"] },
-            { id: 48, subject: "IPA", q: "Ayam memakan biji jagung sekaligus cacing tanah. Hewan pemakan segala disebut...", a: "Omnivora", opts: ["Herbivora", "Karnivora", "Omnivora", "Amfibi"] },
-            { id: 49, subject: "IPA", q: "Lani es batu yang diletakkan di tempat terbuka perlahan menjadi air. Perubahan ini disebut...", a: "Mencair", opts: ["Membeku", "Mencair", "Menguap", "Menyublim"] },
-            { id: 50, subject: "IPA", q: "Air di dalam freezer kulkas berubah menjadi es keras. Perubahan benda cair menjadi padat disebut...", a: "Membeku", opts: ["Mencair", "Membeku", "Menguap", "Mengembun"] },
-            { id: 51, subject: "IPA", q: "Ibu memasak air di teko hingga mendidih dan keluar uap. Perubahan air menjadi uap disebut...", a: "Menguap", opts: ["Menguap", "Membeku", "Mencair", "Mengkristal"] },
-            { id: 52, subject: "IPA", q: "Dini mendengarkan suara musik yang merdu. Organ tubuh manusia untuk mendengar suara adalah...", a: "Telinga", opts: ["Mata", "Telinga", "Hidung", "Lidah"] },
-            { id: 53, subject: "IPA", q: "Rudi melihat pemandangan indah di pegunungan. Organ tubuh yang berfungsi untuk melihat adalah...", a: "Mata", opts: ["Mata", "Telinga", "Kulit", "Hidung"] },
-            { id: 54, subject: "IPA", q: "Ani merasakan permukaan buah durian yang kasar dan licinnya buah apel menggunakan...", a: "Kulit", opts: ["Lidah", "Kulit", "Mata", "Telinga"] },
-            { id: 55, subject: "IPA", q: "Doni dapat membedakan rasa manis gula dan asin garam menggunakan organ panca indra...", a: "Lidah", opts: ["Lidah", "Hidung", "Kulit", "Telinga"] },
-            { id: 56, subject: "IPA", q: "Tumbuhan hijau membutuhkan sinar Matahari untuk membuat makanan sendiri melalui proses...", a: "Fotosintesis", opts: ["Fotosintesis", "Pernapasan", "Penguapan", "Cangkok"] },
-            { id: 57, subject: "IPA", q: "Nyamuk berkembang biak di tempat air tergenang. Nyamuk menetas dari telur menjadi...", a: "Jentik-jentik", opts: ["Ulat", "Jentik-jentik", "Kepompong", "Kecoa"] },
-            { id: 58, subject: "IPA", q: "Kupu-kupu yang indah berasal dari ulat yang diam membungkus diri menjadi...", a: "Kepompong", opts: ["Jentik-jentik", "Kepompong", "Telur", "Bunga"] },
-            { id: 59, subject: "IPA", q: "Bagian tumbuhan yang berfungsi sebagai tempat munculnya bunga dan buah serta menegakkan tumbuhan adalah...", a: "Batang", opts: ["Akar", "Batang", "Daun", "Biji"] },
-            { id: 60, subject: "IPA", q: "Bagian tumbuhan yang cantik dan berwarna-warni menarik perhatian serangga adalah...", a: "Bunga", opts: ["Daun", "Akar", "Bunga", "Biji"] },
-            { id: 61, subject: "IPA", q: "Manusia membutuhkan oksigen untuk bernapas. Organ utama pernapasan manusia adalah...", a: "Paru-paru", opts: ["Jantung", "Hati", "Paru-paru", "Lambung"] },
-            { id: 62, subject: "IPA", q: "Darah dipompa ke seluruh tubuh manusia secara terus-menerus oleh organ...", a: "Jantung", opts: ["Paru-paru", "Jantung", "Lambung", "Ginjal"] },
-            { id: 63, subject: "IPA", q: "Makanan yang kita makan diproses dan dicerna di dalam perut oleh organ...", a: "Lambung", opts: ["Jantung", "Paru-paru", "Lambung", "Otak"] },
-            { id: 64, subject: "IPA", q: "Burung dapat terbang tinggi di udara karena memiliki anggota tubuh berupa...", a: "Sayap", opts: ["Sirip", "Sayap", "Kaki", "Ekor"] },
-            { id: 65, subject: "IPA", q: "Cicak dapat meloloskan diri dari kejaran musuh dengan cara memutuskan ekornya yang disebut...", a: "Autotomi", opts: ["Mimikri", "Autotomi", "Adaptasi", "Hibernasi"] },
-            { id: 66, subject: "IPA", q: "Bunglon dapat mengubah warna kulitnya sesuai tempat ia hinggap. Kemampuan ini disebut...", a: "Mimikri", opts: ["Autotomi", "Mimikri", "Fotosintesis", "Ekolokasi"] },
-            { id: 67, subject: "IPA", q: "Pohon jati menggugurkan daunnya pada musim kemarau untuk mengurangi penguapan air. Ini bentuk...", a: "Adaptasi", opts: ["Autotomi", "Mimikri", "Adaptasi", "Fotosintesis"] },
+          ctx.fillStyle = woodGrad;
+          ctx.fillRect(0, -15, distance, 6);
+          ctx.fillRect(0, 9, distance, 6);
 
-            // IPS (68-100)
-            { id: 68, subject: "IPS", q: "Siti baru saja lahir. Orang tua Siti mengurus dokumen penting pencatatan kelahiran yaitu...", a: "Akta Kelahiran", opts: ["KTP", "Akta Kelahiran", "SIM", "Paspor"] },
-            { id: 69, subject: "IPS", q: "Budi memanggil ayah dari orang tuanya dengan sebutan...", a: "Kakek", opts: ["Paman", "Kakek", "Nenek", "Abang"] },
-            { id: 70, subject: "IPS", q: "Warga desa bekerjasama membersihkan saluran air bersama-sama. Kegiatan ini dinamakan...", a: "Gotong royong", opts: ["Gotong royong", "Mandiri", "Bermain", "Ujian"] },
-            { id: 71, subject: "IPS", q: "Di dalam lingkungan sekolah, tugas utama seorang murid adalah...", a: "Belajar", opts: ["Mengajar", "Belajar", "Menjaga gerbang", "Membuat soal"] },
-            { id: 72, subject: "IPS", q: "Ayah bekerja keras setiap hari untuk memenuhi kebutuhan keluarga. Ayah berperan sebagai...", a: "Kepala keluarga", opts: ["Kepala sekolah", "Kepala keluarga", "Murid", "Tetangga"] },
-            { id: 73, subject: "IPS", q: "Ibu pergi ke tempat transaksi penjual dan pembeli bertemu untuk membeli sayur. Tempat itu adalah...", a: "Pasar", opts: ["Sekolah", "Pasar", "Rumah Sakit", "Stasiun"] },
-            { id: 74, subject: "IPS", q: "Dokumen diri berfoto yang wajib dimiliki setiap warga negara yang sudah berusia 17 tahun adalah...", a: "KTP", opts: ["KTP", "Rapor", "Kartu Pelajar", "Tabungan"] },
-            { id: 75, subject: "IPS", q: "Ibu dari ayah atau ibu kita panggil dengan sebutan...", a: "Nenek", opts: ["Bibi", "Nenek", "Kakak", "Kakek"] },
-            { id: 76, subject: "IPS", q: "Saudara laki-laki dari ayah atau ibu kita dipanggil...", a: "Paman", opts: ["Paman", "Kakek", "Abang", "Bapak"] },
-            { id: 77, subject: "IPS", q: "Saudara perempuan dari ayah atau ibu kita dipanggil...", a: "Bibi", opts: ["Nenek", "Bibi", "Kakak", "Ibu"] },
-            { id: 78, subject: "IPS", q: "Simbol negara Indonesia yang cengkeramannya memegang pita Bhinneka Tunggal Ika adalah...", a: "Garuda Pancasila", opts: ["Bendera Merah Putih", "Garuda Pancasila", "Lagu Indonesia Raya", "Tugu Monas"] },
-            { id: 79, subject: "IPS", q: "Bendera kebangsaan negara Indonesia memiliki warna...", a: "Merah Putih", opts: ["Merah Putih", "Hijau Putih", "Kuning Biru", "Merah Biru"] },
-            { id: 80, subject: "IPS", q: "Lagu kebangsaan negara Republik Indonesia adalah...", a: "Indonesia Raya", opts: ["Halo-Halo Bandung", "Indonesia Raya", "Garuda Pancasila", "Maju Tak Gentar"] },
-            { id: 81, subject: "IPS", q: "Presiden pertama Republik Indonesia yang memproklamasikan kemerdekaan adalah...", a: "Ir. Soekarno", opts: ["Ir. Soekarno", "Drs. Mohammad Hatta", "Pak Jendral", "Ki Hajar Dewantara"] },
-            { id: 82, subject: "IPS", q: "Tempat berkumpulnya siswa untuk menuntut ilmu bersama guru dinamakan...", a: "Sekolah", opts: ["Pasar", "Sekolah", "Pabrik", "Terminal"] },
-            { id: 83, subject: "IPS", q: "Orang yang tinggal di sebelah rumah kita dinamakan...", a: "Tetangga", opts: ["Tetangga", "Musuh", "Tamu", "Turis"] },
-            { id: 84, subject: "IPS", q: "Jika kita berbuat kesalahan kepada orang lain, sebaiknya kita segera...", a: "Minta maaf", opts: ["Minta maaf", "Lari", "Marah", "Diam saja"] },
-            { id: 85, subject: "IPS", q: "Ketika menerima bantuan dari orang lain, kita harus mengucapkan...", a: "Terima kasih", opts: ["Terima kasih", "Sama-sama", "Hore", "Awas"] },
-            { id: 86, subject: "IPS", q: "Setiap anggota keluarga harus saling mengasihi dan menjaga rukun agar tercipta suasana...", a: "Damai", opts: ["Ramai", "Damai", "Kacau", "Bising"] },
-            { id: 87, subject: "IPS", q: "Candi Borobudur merupakan peninggalan bersejarah agama...", a: "Buddha", opts: ["Hindu", "Buddha", "Islam", "Kristen"] },
-            { id: 88, subject: "IPS", q: "Rumah adat khas dari daerah Sumatra Barat dinamakan...", a: "Rumah Gadang", opts: ["Rumah Joglo", "Rumah Gadang", "Rumah Honai", "Rumah Tongkonan"] },
-            { id: 89, subject: "IPS", q: "Pakaian adat khas daerah Jawa Tengah dinamakan...", a: "Kebaya", opts: ["Baju Bodo", "Kebaya", "Ulos", "Baju Ulos"] },
-            { id: 90, subject: "IPS", q: "Alat musik tradisional bambu yang dimainkan dengan cara digoyang asal Jawa Barat adalah...", a: "Angklung", opts: ["Sando", "Angklung", "Gamelan", "Tifa"] },
-            { id: 91, subject: "IPS", q: "Alat transportasi tradisional yang ditarik oleh kuda dinamakan...", a: "Delman", opts: ["Becak", "Delman", "Sepeda", "Mobil"] },
-            { id: 92, subject: "IPS", q: "Pengemudi kapal laut disebut...", a: "Nakhoda", opts: ["Pilot", "Masinis", "Nakhoda", "Sopir"] },
-            { id: 93, subject: "IPS", q: "Pengemudi pesawat terbang dinamakan...", a: "Pilot", opts: ["Pilot", "Masinis", "Sopir", "Nakhoda"] },
-            { id: 94, subject: "IPS", q: "Orang yang mengemudikan kereta api dinamakan...", a: "Masinis", opts: ["Sopir", "Masinis", "Pilot", "Nakhoda"] },
-            { id: 95, subject: "IPS", q: "Tempat pemberhentian dan keberangkatan kereta api dinamakan...", a: "Stasiun", opts: ["Terminal", "Stasiun", "Bandara", "Pelabuhan"] },
-            { id: 96, subject: "IPS", q: "Tempat mendarat dan lepas landas pesawat terbang dinamakan...", a: "Bandara", opts: ["Pelabuhan", "Bandara", "Stasiun", "Terminal"] },
-            { id: 97, subject: "IPS", q: "Pekerjaan orang yang menangkap ikan di laut adalah...", a: "Nelayan", opts: ["Petani", "Nelayan", "Peternak", "Pedagang"] },
-            { id: 98, subject: "IPS", q: "Pekerjaan orang yang bercocok tanam padi di sawah adalah...", a: "Petani", opts: ["Petani", "Nelayan", "Koki", "Sopir"] },
-            { id: 99, subject: "IPS", q: "Uang yang kita sisihkan dan kita simpan di celengan dinamakan...", a: "Menabung", opts: ["Jajan", "Menabung", "Hutang", "Beli mainan"] },
-            { id: 100, subject: "IPS", q: "Mata uang resmi negara Indonesia adalah...", a: "Rupiah", opts: ["Ringgit", "Rupiah", "Dolar", "Yen"] }
-        ];
+          // Anak Tangga
+          const stepCount = Math.floor(distance / 22);
+          for (let i = 1; i <= stepCount; i++) {
+            const stepX = (distance / (stepCount + 1)) * i;
+            ctx.fillStyle = "#8d6e63";
+            ctx.fillRect(stepX - 3, -15, 6, 30);
+            ctx.fillStyle = "#3e2723";
+            ctx.fillRect(stepX - 3, 12, 6, 3);
+          }
 
-        function getCellCenter(cellNum) {
-            let row = Math.floor((cellNum - 1) / 10);
-            let col = (cellNum - 1) % 10;
-            if (row % 2 === 1) {
-                col = 9 - col;
-            }
-            let y = (9 - row) * 50 + 25;
-            let x = col * 50 + 25;
-            return { x, y };
-        }
+          ctx.restore();
+        });
 
-        // DRAW 3D GRAPHICS (CANVAS)
-        function drawCanvasGraphics() {
-            const canvas = document.getElementById("board-canvas");
-            const ctx = canvas.getContext("2d");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 2. Draw 3D Snakes
+        snakes.forEach((snake) => {
+          const head = getCellCenter(snake.from);
+          const tail = getCellCenter(snake.to);
 
-            // 1. Draw 3D Ladders
-            ladders.forEach(ladder => {
-                const start = getCellCenter(ladder.from);
-                const end = getCellCenter(ladder.to);
+          ctx.save();
 
-                ctx.save();
-                const dx = end.x - start.x;
-                const dy = end.y - start.y;
-                const distance = Math.hypot(dx, dy);
-                const angle = Math.atan2(dy, dx);
+          // Bayangan Ular
+          ctx.beginPath();
+          ctx.moveTo(head.x + 5, head.y + 8);
+          let midX = (head.x + tail.x) / 2 + 35;
+          let midY = (head.y + tail.y) / 2 + 5;
+          ctx.quadraticCurveTo(midX, midY, tail.x + 5, tail.y + 8);
+          ctx.lineWidth = 14;
+          ctx.strokeStyle = "rgba(0,0,0,0.25)";
+          ctx.lineCap = "round";
+          ctx.stroke();
 
-                ctx.translate(start.x, start.y);
-                ctx.rotate(angle);
+          // Badan Ular
+          ctx.beginPath();
+          ctx.moveTo(head.x, head.y);
+          ctx.quadraticCurveTo(
+            (head.x + tail.x) / 2 + 30,
+            (head.y + tail.y) / 2,
+            tail.x,
+            tail.y,
+          );
+          ctx.lineWidth = 14;
+          ctx.strokeStyle = snake.color;
+          ctx.lineCap = "round";
+          ctx.stroke();
 
-                // Bayangan Tangga
-                ctx.fillStyle = 'rgba(0,0,0,0.25)';
-                ctx.fillRect(0, 6, distance, 5);
-                ctx.fillRect(0, -11, distance, 5);
+          // Highlight Ular
+          ctx.beginPath();
+          ctx.moveTo(head.x - 2, head.y - 2);
+          ctx.quadraticCurveTo(
+            (head.x + tail.x) / 2 + 28,
+            (head.y + tail.y) / 2 - 2,
+            tail.x - 2,
+            tail.y - 2,
+          );
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgba(255,255,255,0.4)";
+          ctx.lineCap = "round";
+          ctx.stroke();
 
-                // Batang Tangga
-                let woodGrad = ctx.createLinearGradient(0, -15, 0, 15);
-                woodGrad.addColorStop(0, '#8d6e63');
-                woodGrad.addColorStop(0.5, '#5d4037');
-                woodGrad.addColorStop(1, '#3e2723');
+          // Kepala Ular
+          ctx.beginPath();
+          ctx.arc(head.x, head.y, 11, 0, Math.PI * 2);
+          ctx.fillStyle = snake.color;
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#ffffff";
+          ctx.stroke();
 
-                ctx.fillStyle = woodGrad;
-                ctx.fillRect(0, -15, distance, 6);
-                ctx.fillRect(0, 9, distance, 6);
+          // Mata Ular
+          ctx.beginPath();
+          ctx.arc(head.x - 3, head.y - 3, 3, 0, Math.PI * 2);
+          ctx.arc(head.x + 3, head.y - 3, 3, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
 
-                // Anak Tangga
-                const stepCount = Math.floor(distance / 22);
-                for (let i = 1; i <= stepCount; i++) {
-                    const stepX = (distance / (stepCount + 1)) * i;
-                    ctx.fillStyle = '#8d6e63';
-                    ctx.fillRect(stepX - 3, -15, 6, 30);
-                    ctx.fillStyle = '#3e2723';
-                    ctx.fillRect(stepX - 3, 12, 6, 3);
-                }
+          ctx.beginPath();
+          ctx.arc(head.x - 3, head.y - 3, 1.5, 0, Math.PI * 2);
+          ctx.arc(head.x + 3, head.y - 3, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = "#000000";
+          ctx.fill();
 
-                ctx.restore();
-            });
+          ctx.restore();
+        });
+      }
 
-            // 2. Draw 3D Snakes
-            snakes.forEach(snake => {
-                const head = getCellCenter(snake.from);
-                const tail = getCellCenter(snake.to);
+      // Ambil Soal Cerita Sesuai Posisi Kotak Pemain
+      function renderQuiz() {
+        const qIndex = (playerPosition - 1) % storyQuestions.length;
+        const q = storyQuestions[qIndex];
+        currentCorrectAnswer = q.a;
 
-                ctx.save();
+        document.getElementById("subject-badge").innerText = q.subject;
+        document.getElementById("question-text").innerText =
+          `[Soal ${q.id}] ${q.q}`;
+        document.getElementById("spin-result").innerText = "";
+        document.getElementById("instruction-banner").innerText =
+          "1. Jawab soal cerita terlebih dahulu!";
+        document.getElementById("wrong-count-display").innerText =
+          wrongAttempts;
 
-                // Bayangan Ular
-                ctx.beginPath();
-                ctx.moveTo(head.x + 5, head.y + 8);
-                let midX = (head.x + tail.x) / 2 + 35;
-                let midY = (head.y + tail.y) / 2 + 5;
-                ctx.quadraticCurveTo(midX, midY, tail.x + 5, tail.y + 8);
-                ctx.lineWidth = 14;
-                ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-                ctx.lineCap = 'round';
-                ctx.stroke();
+        const optsContainer = document.getElementById("options-container");
+        optsContainer.innerHTML = "";
 
-                // Badan Ular
-                ctx.beginPath();
-                ctx.moveTo(head.x, head.y);
-                ctx.quadraticCurveTo((head.x + tail.x) / 2 + 30, (head.y + tail.y) / 2, tail.x, tail.y);
-                ctx.lineWidth = 14;
-                ctx.strokeStyle = snake.color;
-                ctx.lineCap = 'round';
-                ctx.stroke();
+        q.opts.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.className = "option-btn";
+          btn.innerText = opt;
+          btn.onclick = () => checkAnswer(opt);
+          optsContainer.appendChild(btn);
+        });
+      }
 
-                // Highlight Ular
-                ctx.beginPath();
-                ctx.moveTo(head.x - 2, head.y - 2);
-                ctx.quadraticCurveTo((head.x + tail.x) / 2 + 28, (head.y + tail.y) / 2 - 2, tail.x - 2, tail.y - 2);
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-                ctx.lineCap = 'round';
-                ctx.stroke();
+      // PENANGANAN SALAH JAWAB (Reset ke Kotak 1 jika salah > 2 kali)
+      function checkAnswer(selectedOpt) {
+        if (selectedOpt === currentCorrectAnswer) {
+          playSound("correct");
+          wrongAttempts = 0; // Reset hitungan kesalahan jika berhasil menjawab benar
+          document.getElementById("wrong-count-display").innerText =
+            wrongAttempts;
+          document.getElementById("instruction-banner").innerText =
+            "2. Jawaban Benar! Klik 'Putar Roda Spin'.";
+          document.getElementById("btn-spin").disabled = false;
+          disableQuizButtons();
+        } else {
+          wrongAttempts++;
+          document.getElementById("wrong-count-display").innerText =
+            wrongAttempts;
 
-                // Kepala Ular
-                ctx.beginPath();
-                ctx.arc(head.x, head.y, 11, 0, Math.PI * 2);
-                ctx.fillStyle = snake.color;
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#ffffff';
-                ctx.stroke();
-
-                // Mata Ular
-                ctx.beginPath();
-                ctx.arc(head.x - 3, head.y - 3, 3, 0, Math.PI * 2);
-                ctx.arc(head.x + 3, head.y - 3, 3, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(head.x - 3, head.y - 3, 1.5, 0, Math.PI * 2);
-                ctx.arc(head.x + 3, head.y - 3, 1.5, 0, Math.PI * 2);
-                ctx.fillStyle = '#000000';
-                ctx.fill();
-
-                ctx.restore();
-            });
-        }
-
-        // Ambil Soal Cerita Sesuai Posisi Kotak Pemain
-        function renderQuiz() {
-            const qIndex = (playerPosition - 1) % storyQuestions.length;
-            const q = storyQuestions[qIndex];
-            currentCorrectAnswer = q.a;
-
-            document.getElementById("subject-badge").innerText = q.subject;
-            document.getElementById("question-text").innerText = `[Soal ${q.id}] ${q.q}`;
-            document.getElementById("spin-result").innerText = "";
-            document.getElementById("instruction-banner").innerText = "1. Jawab soal cerita terlebih dahulu!";
-
-            const optsContainer = document.getElementById("options-container");
-            optsContainer.innerHTML = "";
-
-            q.opts.forEach(opt => {
-                const btn = document.createElement("button");
-                btn.className = "option-btn";
-                btn.innerText = opt;
-                btn.onclick = () => checkAnswer(opt);
-                optsContainer.appendChild(btn);
-            });
-        }
-
-        function checkAnswer(selectedOpt) {
-            if (selectedOpt === currentCorrectAnswer) {
-                playSound('correct');
-                document.getElementById("instruction-banner").innerText = "2. Jawaban Benar! Klik 'Putar Roda Spin'.";
-                document.getElementById("btn-spin").disabled = false;
-                disableQuizButtons();
-            } else {
-                playSound('wrong');
-                alert("Jawaban kurang tepat! Coba jawab soal baru berikut ini 💪");
-                renderQuiz();
-            }
-        }
-
-        function disableQuizButtons() {
-            const btns = document.querySelectorAll(".option-btn");
-            btns.forEach(b => b.disabled = true);
-        }
-
-        // Render Papan 10x10 Warni Warni
-        function createBoard() {
-            const boardGrid = document.getElementById("board-grid");
-            boardGrid.innerHTML = "";
-
-            for (let row = 9; row >= 0; row--) {
-                for (let col = 0; col < 10; col++) {
-                    let cellNum;
-                    if (row % 2 === 1) {
-                        cellNum = row * 10 + (10 - col);
-                    } else {
-                        cellNum = row * 10 + (col + 1);
-                    }
-
-                    const cell = document.createElement("div");
-                    cell.className = `cell ${cellNum === 100 ? "cell-100" : ""}`;
-                    cell.id = `cell-${cellNum}`;
-                    cell.innerText = cellNum;
-
-                    const colorIndex = (cellNum - 1) % cellColors.length;
-                    cell.style.backgroundColor = cellColors[colorIndex];
-
-                    cell.onclick = () => handleCellClick(cellNum);
-
-                    boardGrid.appendChild(cell);
-                }
-            }
-            drawCanvasGraphics();
-            updateTokenPosition();
-        }
-
-        function updateTokenPosition() {
-            const targetCell = document.getElementById(`cell-${playerPosition}`);
-            const token = document.getElementById("player-token");
-            
-            token.style.left = `${targetCell.offsetLeft + 9}px`;
-            token.style.top = `${targetCell.offsetTop + 9}px`;
-            document.getElementById("pos-display").innerText = playerPosition;
-        }
-
-        // Putar Roda Spin
-        document.getElementById("btn-spin").onclick = () => {
-            initAudio();
-            const btnSpin = document.getElementById("btn-spin");
-            btnSpin.disabled = true;
-
-            pendingSpinResult = Math.floor(Math.random() * 6) + 1;
-            
-            const segmentAngle = 60;
-            const targetAngle = (6 - pendingSpinResult) * segmentAngle + 30;
-            currentRotation += 1800 + (targetAngle - (currentRotation % 360));
-            
-            const wheel = document.getElementById("wheel");
-            wheel.style.transform = `rotate(${currentRotation}deg)`;
-
-            setTimeout(() => {
-                document.getElementById("spin-result").innerText = `Hasil Spin: +${pendingSpinResult} Langkah!`;
-                
-                const targetCellNum = playerPosition + pendingSpinResult;
-                if (targetCellNum <= 100) {
-                    waitingForUserClick = true;
-                    highlightTargetCell(targetCellNum);
-                    document.getElementById("instruction-banner").innerText = `3. KLIK KOTAK ${targetCellNum} pada papan untuk berjalan! 🏃‍♂️`;
-                } else {
-                    alert("Langkah melebihi kotak 100! Kamu diam di tempat.");
-                    renderQuiz();
-                }
-            }, 3000);
-        };
-
-        function highlightTargetCell(targetNum) {
-            clearHighlights();
-            const cell = document.getElementById(`cell-${targetNum}`);
-            if (cell) cell.classList.add("target-highlight");
-        }
-
-        function clearHighlights() {
-            document.querySelectorAll(".cell").forEach(c => c.classList.remove("target-highlight"));
-        }
-
-        // Handler Klik Kotak oleh User
-        function handleCellClick(cellNum) {
-            if (!waitingForUserClick) return;
-
-            const expectedTarget = playerPosition + pendingSpinResult;
-            if (cellNum !== expectedTarget) {
-                alert(`Silakan klik kotak ${expectedTarget} sesuai hasil spin!`);
-                return;
-            }
-
+          if (wrongAttempts > 2) {
+            playSound("reset");
+            alert(
+              "⚠️ Kamu telah salah menjawab lebih dari 2 kali! Karakter kamu kembali ke kotak 1.",
+            );
+            wrongAttempts = 0;
+            playerPosition = 1;
             waitingForUserClick = false;
             clearHighlights();
-            document.getElementById("instruction-banner").innerText = "Pemain sedang melangkah...";
+            updateTokenPosition();
+            document.getElementById("btn-spin").disabled = true;
+            renderQuiz();
+          } else {
+            playSound("wrong");
+            alert(
+              `Jawaban kurang tepat! (Kesalahan ${wrongAttempts}/2). Coba jawab soal baru berikut ini 💪`,
+            );
+            renderQuiz();
+          }
+        }
+      }
 
-            let stepsLeft = pendingSpinResult;
-            const stepInterval = setInterval(() => {
-                playerPosition++;
-                updateTokenPosition();
-                playSound('step');
-                stepsLeft--;
+      function disableQuizButtons() {
+        const btns = document.querySelectorAll(".option-btn");
+        btns.forEach((b) => (b.disabled = true));
+      }
 
-                if (stepsLeft === 0) {
-                    clearInterval(stepInterval);
-                    
-                    setTimeout(() => {
-                        if (snakesAndLaddersMap[playerPosition]) {
-                            const target = snakesAndLaddersMap[playerPosition];
-                            if (target > playerPosition) {
-                                playSound('ladder');
-                                alert(`Hore! Kamu naik tangga ke kotak ${target} 🪜✨`);
-                            } else {
-                                playSound('snake');
-                                alert(`Awas! Kamu tergelincir ular ke kotak ${target} 🐍`);
-                            }
-                            playerPosition = target;
-                            updateTokenPosition();
-                        }
+      // Render Papan 10x10 Warni Warni
+      function createBoard() {
+        const boardGrid = document.getElementById("board-grid");
+        boardGrid.innerHTML = "";
 
-                        if (playerPosition === 100) {
-                            alert("SELAMAT! 🏆 Kamu berhasil mencapai kotak 100 dan memenangkan permainan!");
-                        } else {
-                            renderQuiz();
-                        }
-                    }, 400);
-                }
-            }, 300);
+        for (let row = 9; row >= 0; row--) {
+          for (let col = 0; col < 10; col++) {
+            let cellNum;
+            if (row % 2 === 1) {
+              cellNum = row * 10 + (10 - col);
+            } else {
+              cellNum = row * 10 + (col + 1);
+            }
+
+            const cell = document.createElement("div");
+            cell.className = `cell ${cellNum === 100 ? "cell-100" : ""}`;
+            cell.id = `cell-${cellNum}`;
+            cell.innerText = cellNum;
+
+            const colorIndex = (cellNum - 1) % cellColors.length;
+            cell.style.backgroundColor = cellColors[colorIndex];
+
+            cell.onclick = () => handleCellClick(cellNum);
+
+            boardGrid.appendChild(cell);
+          }
+        }
+        drawCanvasGraphics();
+        updateTokenPosition();
+      }
+
+      function updateTokenPosition() {
+        const targetCell = document.getElementById(`cell-${playerPosition}`);
+        const token = document.getElementById("player-token");
+
+        token.style.left = `${targetCell.offsetLeft + 9}px`;
+        token.style.top = `${targetCell.offsetTop + 9}px`;
+        document.getElementById("pos-display").innerText = playerPosition;
+      }
+
+      // Putar Roda Spin
+      document.getElementById("btn-spin").onclick = () => {
+        initAudio();
+        const btnSpin = document.getElementById("btn-spin");
+        btnSpin.disabled = true;
+
+        pendingSpinResult = Math.floor(Math.random() * 6) + 1;
+
+        const segmentAngle = 60;
+        const targetAngle = (6 - pendingSpinResult) * segmentAngle + 30;
+        currentRotation += 1800 + (targetAngle - (currentRotation % 360));
+
+        const wheel = document.getElementById("wheel");
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+          document.getElementById("spin-result").innerText =
+            `Hasil Spin: +${pendingSpinResult} Langkah!`;
+
+          const targetCellNum = playerPosition + pendingSpinResult;
+          if (targetCellNum <= 100) {
+            waitingForUserClick = true;
+            highlightTargetCell(targetCellNum);
+            document.getElementById("instruction-banner").innerText =
+              `3. KLIK KOTAK ${targetCellNum} pada papan untuk berjalan! 🏃‍♂️`;
+          } else {
+            alert("Langkah melebihi kotak 100! Kamu diam di tempat.");
+            renderQuiz();
+          }
+        }, 3000);
+      };
+
+      function highlightTargetCell(targetNum) {
+        clearHighlights();
+        const cell = document.getElementById(`cell-${targetNum}`);
+        if (cell) cell.classList.add("target-highlight");
+      }
+
+      function clearHighlights() {
+        document
+          .querySelectorAll(".cell")
+          .forEach((c) => c.classList.remove("target-highlight"));
+      }
+
+      // Handler Klik Kotak oleh User
+      function handleCellClick(cellNum) {
+        if (!waitingForUserClick) return;
+
+        const expectedTarget = playerPosition + pendingSpinResult;
+        if (cellNum !== expectedTarget) {
+          alert(`Silakan klik kotak ${expectedTarget} sesuai hasil spin!`);
+          return;
         }
 
-        document.getElementById("btn-restart").onclick = () => {
-            if (confirm("Ulangi permainan dari awal?")) {
-                playerPosition = 1;
-                waitingForUserClick = false;
-                clearHighlights();
-                updateTokenPosition();
-                document.getElementById("btn-spin").disabled = true;
-                renderQuiz();
-            }
-        };
+        waitingForUserClick = false;
+        clearHighlights();
+        document.getElementById("instruction-banner").innerText =
+          "Pemain sedang melangkah...";
 
-        window.onload = () => {
-            createBoard();
-            renderQuiz();
-            window.onresize = () => {
-                drawCanvasGraphics();
+        let stepsLeft = pendingSpinResult;
+        const stepInterval = setInterval(() => {
+          playerPosition++;
+          updateTokenPosition();
+          playSound("step");
+          stepsLeft--;
+
+          if (stepsLeft === 0) {
+            clearInterval(stepInterval);
+
+            setTimeout(() => {
+              if (snakesAndLaddersMap[playerPosition]) {
+                const target = snakesAndLaddersMap[playerPosition];
+                if (target > playerPosition) {
+                  playSound("ladder");
+                  alert(`Hore! Kamu naik tangga ke kotak ${target} 🪜✨`);
+                } else {
+                  playSound("snake");
+                  alert(`Awas! Kamu tergelincir ular ke kotak ${target} 🐍`);
+                }
+                playerPosition = target;
                 updateTokenPosition();
-            };
+              }
+
+              if (playerPosition === 100) {
+                alert(
+                  "SELAMAT! 🏆 Kamu berhasil mencapai kotak 100 dan memenangkan permainan!",
+                );
+              } else {
+                renderQuiz();
+              }
+            }, 400);
+          }
+        }, 300);
+      }
+
+      document.getElementById("btn-restart").onclick = () => {
+        if (confirm("Ulangi permainan dari awal?")) {
+          playerPosition = 1;
+          wrongAttempts = 0;
+          waitingForUserClick = false;
+          clearHighlights();
+          updateTokenPosition();
+          document.getElementById("btn-spin").disabled = true;
+          renderQuiz();
+        }
+      };
+
+      window.onload = () => {
+        createBoard();
+        renderQuiz();
+        window.onresize = () => {
+          drawCanvasGraphics();
+          updateTokenPosition();
         };
+      };
     </script>
-</body>
+  </body>
 </html>
